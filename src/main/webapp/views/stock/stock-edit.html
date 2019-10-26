@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html class="x-admin-sm">
+
+<head>
+    <meta charset="UTF-8">
+    <title>欢迎页面-X-admin2.1</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi"/>
+    <link rel="stylesheet" href="../../css/font.css">
+    <link rel="stylesheet" href="../../css/xadmin.css">
+    <script type="text/javascript" src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <script type="text/javascript" src="../../lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../../js/xadmin.js"></script>
+    <script type="text/javascript" src="../../js/cookie.js"></script>
+    <script type="text/javascript" src="../../js/ajaxQuery.js"></script>
+    <script type="text/javascript" src="../../js/layui-table-select.js"></script>
+    <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+    <!--[if lt IE 9]>
+    <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+    <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+<script>
+
+    //选择库存名称
+    function addStocks() {
+        x_admin_show("选择库存类型", "../goods/chooseGoodsType.html", 900, 600, parent, null, null, function () {
+
+            document.getElementById("goodName").value = parent.goodsName;
+            document.getElementById("name").value = parent.goodsName;
+
+            document.getElementById("gId").value = parent.Gid;
+
+        });
+        return false;
+    }
+
+    function chooseSupplier() {
+        x_admin_show("选择供应商", "../supplier/choose.html", 900, 600, parent, null, null, function () {
+
+            var supplier = parent.chooseSupplier;
+            $("#supplierId").val(supplier.id);
+            $("#provider").val(supplier.name);
+
+        });
+        return false;
+    }
+
+
+</script>
+
+<body>
+<div class="x-body">
+    <form class="layui-form" lay-filter="stock-form">
+        <!-- <div class="layui-form-item">
+             <label class="layui-form-label">库存名称</label>
+             <div class="layui-input-inline">
+                 <select name="gId" lay-verify="gId" id="good_select" required>
+                     <option value=""></option>
+                 </select>
+             </div>
+         </div>-->
+
+        <div class="layui-form-item">
+            <label class="layui-form-label"> <span class="x-red">*</span>库存批次</label>
+
+            <div class="layui-input-inline">
+                <input type="text" class="layui-input" id="batch" name="batch" value="" required=""
+                       lay-verify="required" readonly="readonly">
+            </div>
+        </div>
+        <input type="hidden" class="layui-input" id="name" name="name" value="" required="" lay-verify="name">
+
+        <div class="layui-form-item">
+            <label class="layui-form-label"> <span class="x-red">*</span>库存类型</label>
+            <!--<span id="goodName"></span>-->
+            <div class="layui-input-inline">
+                <input type="text" class="layui-input" id="goodName" readonly="readonly">
+            </div>
+            <a class="layui-btn" onclick="addStocks()" style="margin-left: 15px"><i class="layui-icon"></i>选择库存类型</a>
+        </div>
+
+        <!-- 隐藏域  随表单一起提交 -->
+        <input type="hidden" class="layui-input" id="gId" name="gId" value="" lay-verify="gId">
+        <!-- 隐藏域  保存当前库存id  随请求一起提交上去-->
+        <input type="hidden" id="id" name="id" class="layui-input" lay-verify="id">
+
+        <div class="layui-form-item">
+            <label for="amount" class="layui-form-label">
+                <span class="x-red">*</span>入库数量
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="amount" name="amount" required="" lay-verify="amount"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label for="amount" class="layui-form-label">
+                <span class="x-red">*</span>入库误差
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="offsetAmount" name="offsetAmount" required="" lay-verify="amount"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label for="price" class="layui-form-label">
+                <span class="x-red">*</span>价格
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="price" name="price" required="" lay-verify="price"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label for="provider" class="layui-form-label">
+                <span class="x-red">*</span>供应商
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="provider" name="provider" required="" lay-verify="required"
+                       autocomplete="off" class="layui-input" readonly="readonly">
+                <input type="hidden" name="supplierId" id="supplierId"/>
+            </div>
+            <a class="layui-btn" onclick="chooseSupplier()" style="margin-left: 15px"><i
+                    class="layui-icon"></i>选择供应商</a>
+        </div>
+        <div class="layui-form-item layui-form-text">
+            <label for="description" class="layui-form-label">
+                描述
+            </label>
+            <div class="layui-input-block">
+                <textarea placeholder="请输入内容" id="description" name="description" class="layui-textarea"
+                          lay-verify="description"></textarea>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">
+            </label>
+            <button type="button" class="layui-btn" lay-filter="add" lay-submit="" id="add">
+                修改
+            </button>
+        </div>
+    </form>
+
+</div>
+
+<script type="text/javascript">
+
+
+    $(function () {
+        //获取父页面传递过来的值
+        var dataField = JSON.parse(parent.parToChilData);
+        $("#amount").val(dataField.amount);
+        $("#price").val(dataField.price);
+        $("#provider").val(dataField.provider);
+        $("#description").val(dataField.description);
+        $("#id").val(dataField.id);
+        $("#name").val(dataField.name);
+        $("#batch").val(dataField.batch);
+        $("#gId").val(dataField.goods.id);
+        $("#offsetAmount").val(dataField.offsetAmount);
+        $("#supplierId").val(dataField.supplierId);
+
+        $.hoshi()
+            .get("/goods/queryGoodById/" + dataField.goods.id)
+            .onSuccess(function (data) {
+                $("#goodName").val(data.name);
+            })
+            .linkStart();
+    })
+
+
+    layui.use(["jquery", "form", "layer"], function () {
+        var $ = layui.$,
+            layer = layui.layer,
+            form = layui.form;
+
+        /*  //渲染页面下拉框
+          $.hoshi()
+              .get("/goods/allgoods")
+              .onSuccess(function (data,msg,code) {
+                  if (code===200){
+
+                      //获取父页面传递过来的值
+                      var dataField=JSON.parse(parent.parToChilData);
+                      //图片url
+                      $("#img").val(dataField.img);
+
+                      $("#specs").val(dataField.specs);
+                      $("#amount").val(dataField.amount);
+                      $("#price").val(dataField.price);
+                      $("#provider").val(dataField.provider);
+                      $("#description").val(dataField.description);
+                      $("#id").val(dataField.id);
+                      $("#demo1").attr("src",dataField.img);
+                      // $("#good_select").find("option[value = '"+dataField.gId+"']").attr("selected","selected");
+
+                      //console.log(dataField.gId);
+                      $.each(data,function (index,item) {
+                          var type;
+                          if (item.type===0){
+                              type ="商品";
+                          }else if (type===1){
+                              type="原料";
+                          } else{
+                              type="包材";
+                          }
+                          $("<option "+(dataField.gId == item.id ? "selected = selected":"")+"></option>")
+                              .attr("value",item.id)
+                              .html(type+':'+item.name)
+                              .appendTo("#good_select")
+                      })
+
+                      //重新渲染select下拉框
+                      form.render('select','stock-form');
+
+
+                  } else if (code===0){
+
+                  }
+              })
+              .onError(function () {
+                  layer.msg("未知错误！请联系管理员",{icon:2,time:1000})
+              })
+              .linkStart();*/
+
+        //非负double正则  小数点后2位
+        var reg = /^(([1-9]+)|([0-9]+\.[0-9]{1,2}))$/;
+        // var reg=/^([1-9][0-9]*)+(.[0-9]{1,2})?$/;
+        var int = /^0|[0-9]*[1-9][0-9]*$/;
+        //表单验证
+        form.verify({
+            name: function (value, item) {
+                if (value === "" || value == null) {
+                    return '请输入库存名称';
+                }
+                if (value.length > 10) {
+                    return "库存名称长度不能超过10";
+                }
+            },
+            gId: function (value, item) {
+                if (value === "" || value == null) {
+                    return '请选择库存类型';
+                }
+            },
+            amount: function (value, item) {
+                if (!int.test(value)) {
+                    return "数量请输入正整数";
+                }
+                if (value.length > 8) {
+                    return "数量长度不能超过8";
+                }
+            },
+            price: function (value, item) {
+                if (!(int.test(value) || reg.test(value))) {
+                    return "请输入正确的价格！(正数有效值小数点后2位)";
+                }
+                if (value.length > 8) {
+                    return "价格长度不超过8";
+                }
+            },
+            provider: function (value, item) {
+                if (value.length > 20) {
+                    return "供应商长度不超过20";
+                }
+            },
+            description: function (value, item) {
+                if (value.length > 50) {
+                    return "描述信息不超过50";
+                }
+            }
+        });
+
+        //表单提交事件
+        form.on('submit(add)', function (result) {
+            //console.log(data.elem) //被执行事件的元素DOM对象，一般为button对象
+            //console.log(data.form) //被执行提交的form对象，一般在存在form标签时才会返回
+            //console.log(data.field) //当前容器的全部表单字段，名值对形式：{name: value}
+            result.field.goodName = null;
+
+            var data = JSON.stringify(result.field);
+            $.hoshi()
+                .put("/stock/editStock")
+                .jsonParam(data)
+                .onSuccess(function (data, msg, code) {
+                    parent.layer.msg("更新成功！", {icon: 1});
+                    //关闭当前frame页
+                    //父页当前页刷新
+                    reloadTable(parent);
+                })
+                .linkStart()
+
+        });
+
+    });
+</script>
+
+
+</body>
+</html>

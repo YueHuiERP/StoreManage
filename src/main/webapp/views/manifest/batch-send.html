@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html class="x-admin-sm">
+
+<head>
+    <meta charset="UTF-8">
+    <title>库存管理</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi"/>
+    <link rel="stylesheet" href="../../css/font.css">
+    <link rel="stylesheet" href="../../css/xadmin.css">
+    <script type="text/javascript" src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <script type="text/javascript" src="../../lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../../js/xadmin.js"></script>
+    <script type="text/javascript" src="../../js/cookie.js"></script>
+    <script type="text/javascript" src="../../js/ajaxQuery.js"></script>
+    <script type="text/javascript" src="../../js/layui-table-select.js"></script>
+    <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+    <!--[if lt IE 9]>
+    <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+    <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<script>
+
+    let selectIndex;
+
+    function chooseProduct(index) {
+        selectIndex = index;
+        x_admin_show('选择成品', '../product/choose.html', 900, 600, parent, null, null, function (data) {
+            if (parent.chooseProduct != null) {
+                setProduct(selectIndex, parent.chooseProduct);
+            }
+        });
+    }
+
+
+</script>
+
+<body>
+<div class="x-body">
+    <form class="layui-form" lay-filter="manifest-form">
+
+        <div class="layui-form-item" id="tableContainer">
+            <table class="layui-table layui-form" id="manifestList" lay-filter="manifestList">
+            </table>
+        </div>
+        <div class="layui-form-item">
+            <button type="button" class="layui-btn" lay-filter="add" lay-submit="" id="add">
+                提交
+            </button>
+        </div>
+    </form>
+</div>
+
+<!--<script type="text/html" id="nameTpl">-->
+<!--    <input type="text" class="layui-input" value="{{d.name}}"-->
+<!--           placeholder="输入订单名称"  lay-verify="name" name="name"/>-->
+<!--</script>-->
+
+<!--<script type="text/html" id="amountTpl">-->
+<!--    <input type="text" class="layui-input" value="{{d.amount}}"-->
+<!--           placeholder="输入成品数量"  lay-verify="amount" name="amount"/>-->
+<!--</script>-->
+
+<script type="text/html" id="productTpl">
+    <input type="text" class="layui-input" value="{{d.product == null ? '' :  d.product.name}}" readonly="readonly"
+           onclick="chooseProduct({{ d.LAY_TABLE_INDEX }})" placeholder="选择成品" lay-verify="product" name="product"/>
+</script>
+
+<script type="text/html" id="createTimeTpl">
+    <input class="layui-input date-input" placeholder="创建时间" name="createTime"
+           table-index="{{d.LAY_TABLE_INDEX}}"
+           value="{{d.createTimeStr}}" lay-verify="createTimeStr"/>
+</script>
+
+<script type="text/html" id="operateTpl">
+    <a class='x-red' href='#' onclick="deleteManifest({{ d.LAY_TABLE_INDEX}})">删除</a>
+</script>
+
+<script type="text/html" id="indexTpl">
+    {{  d.LAY_TABLE_INDEX + 1}}
+</script>
+
+<script type="text/javascript">
+    let manifestList = [];
+    let tablns = null;
+
+    let reg = /^(([1-9]+)|([0-9]+\.[0-9]{1,2}))$/;
+    let int = /^0|[0-9]*[1-9][0-9]*$/;
+
+    let options = {
+        elem: "#manifestList",
+        data: manifestList,
+        height: "full-120",
+        limit: Number.MAX_VALUE,
+        cols: [[ //表头
+            {field: 'LAY_TABLE_INDEX', title: '序号', width: 60, templet: '#indexTpl'}
+            , {field: 'name', title: '订单名称', edit: 'text'}
+            , {field: 'remainAmount', title: "剩余数量", width: 80}
+            , {field: 'productName', title: '成品名称', templet: '#productTpl'}
+            , {field: 'amount', title: '成品数量', width: 80, edit: 'text'}
+            , {field: 'createTimeStr', title: '创建日期', width: 200, templet: '#createTimeTpl'}
+            , {fixed: 'right', title: '操作', width: 80, align: 'center', toolbar: '#operateTpl', edit: 'text'}
+        ]],
+        text: {
+            none: "没有待发货订单"
+        },
+        done: function () {
+            layui.use('laydate', function () {
+                let date = layui.laydate;
+                $(".date-input").each(function () {
+                    let cutInput = this;
+                    date.render({
+                        elem: this,
+                        type: 'datetime',
+                        trigger: 'click',
+                        done: function (value) {
+                            let manifest = manifestList[$(cutInput).attr("table-index")] ;
+                            let error = verify.createTimeStr(value);
+                            if (error == null) {
+                                //保存选择的值
+                                manifest.createTimeStr = value;
+                            } else {
+                                //设置为原来的值
+                                $(cutInput).val(manifest.createTimeStr) ;
+                                showToast(error);
+                            }
+                        }
+                    });
+                });
+            })
+        }
+    };
+
+
+    let verify = {
+        name: function (value, item) {
+            if (value === "" || value == null) {
+                return '订单名称不能为空';
+            }
+        },
+        product: function (value) {
+            if (value === "" || value == null) {
+                return '请选择成品';
+            }
+        },
+        productId: function (value, item) {
+            if (value === "" || value == null) {
+                return '请选择成品';
+            }
+        },
+        amount: function (value, item) {
+            if (!int.test(value)) {
+                return "成品数量请输入正整数";
+            }
+            if (value.length > 8) {
+                return "成品数量长度不能超过8";
+            }
+        },
+        createTimeStr: function (value) {
+            if (value == null || value == "") {
+                return "创建日期不能为空";
+            }
+        },
+        status: function () {
+        },
+        LAY_TABLE_INDEX: function () {
+        }
+    };
+
+    let gId = null;
+
+    $(function () {
+
+        gId = getQueryString("gId");
+        initLayUI();
+    });
+
+    function initLayUI() {
+        layui.use(['table'], function () {
+            let table = layui.table;
+            tablns = table.render(options);
+
+            table.on("edit(manifestList)", function (obj) {
+                let value = obj.value;
+                let field = obj.field;
+                let inputElem = $(this);
+                let tdElem = inputElem.closest('td');
+                let valueOld = inputElem.prev().text();
+                let data = {};
+                let errMsg = verify[field](value); // 校验
+                if (errMsg) {
+                    // 如果不满足的时候
+                    layer.msg(errMsg, {time: 1000, anim: 6, shade: 0.01});
+                    data[field] = valueOld;
+                    inputElem.blur();
+                    obj.update(data);
+                    tdElem.click();
+                }
+            })
+            $.hoshi()
+                .get("/manifest/batch/prepare/list/" + gId)
+                .onSuccess(function (data) {
+                    manifestList = data;
+                    reloadManifestTable();
+                }).linkStart();
+        })
+
+        layui.use(["jquery", "upload", "form", "layer", "element"], function () {
+            var $ = layui.$,
+                form = layui.form;
+            form.verify(verify);
+            //表单提交事件
+            form.on('submit(add)', function (result) {
+                console.log(result);
+                if (manifestList.length <= 0) {
+                    showToast("至少添加一条发货记录");
+                } else {
+                    for (let i = 0; i < manifestList.length; i++) {
+                        let manifest = manifestList[i];
+                        let error = judgeManifest(manifest);
+                        if (error != null) {
+                            alert(error);
+                            return;
+                        }
+                    }
+                    let data = JSON.stringify(manifestList);
+                    $.hoshi()
+                        .post("/manifest/add/all")
+                        .jsonParam(data)
+                        .onSuccess(function (data, msg, code) {
+                            showToast(msg, parent.layui);
+                            //关闭当前frame页
+                            reloadTable(parent);
+                        })
+                        .linkStart()
+                }
+                //return false; //阻止表单跳转。
+            });
+        });
+    }
+
+    function reloadManifestTable() {
+        let container;            //layui table 父div
+        let tbBody = null;  //当前的layui table
+        let top = 0;
+        let left = 0;
+
+        container = document.getElementById('tableContainer'); //table的父div
+        if (container != null) {
+            tbBody = container.getElementsByClassName("layui-table-main");
+        }
+
+        if (tbBody != null && tbBody.length > 0) {
+            top = tbBody[0].scrollTop;
+            left = tbBody[0].scrollLeft;
+        }
+
+        tablns.reload({data: manifestList});
+        //还原scroll位置
+        if (tbBody != null && tbBody.length > 0) {
+            tbBody[0].scrollTop = top;
+            tbBody[0].scrollLeft = left;
+        }
+    }
+
+    function deleteManifest(tableIndex) {
+        for (let index in manifestList) {
+            let stock = manifestList[index];
+            if (stock.LAY_TABLE_INDEX == tableIndex) {
+                manifestList.splice(index, 1);
+                break;
+            }
+        }
+        reloadManifestTable();
+    }
+
+    function setProduct(index, product) {
+        manifestList[index].pid = product.id;
+        manifestList[index].product = product;
+        reloadManifestTable();
+    }
+
+    function copyManifest(oldManifest, newManifest) {
+        let pros = Object.keys(newManifest);
+        for (let i = 0; i < pros.length; i++) {
+            let pro = pros[i];
+            newManifest[pro] = oldManifest[pro];
+        }
+    }
+
+    function judgeManifest(manifest) {
+        let errorMsg;
+        let pros = Object.keys(manifest);
+        for (let i = 0; i < pros.length; i++) {
+            let pro = pros[i];
+            let verifier = verify[pro];
+            if (verifier != null) {
+                errorMsg = verifier(manifest[pro]);
+            }
+            if (errorMsg) {
+                break;
+            }
+        }
+        return errorMsg;
+    }
+</script>
+</body>
+</html>

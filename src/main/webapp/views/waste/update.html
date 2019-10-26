@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html class="x-admin-sm">
+
+<head>
+    <meta charset="UTF-8">
+    <title>订单添加</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi"/>
+    <link rel="stylesheet" href="../../css/font.css">
+    <link rel="stylesheet" href="../../css/xadmin.css">
+    <script type="text/javascript" src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <script type="text/javascript" src="../../lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../../js/xadmin.js"></script>
+    <script type="text/javascript" src="../../js/cookie.js"></script>
+    <script type="text/javascript" src="../../js/ajaxQuery.js"></script>
+    <script type="text/javascript" src="../../js/layui-table-select.js"></script>
+    <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+    <!--[if lt IE 9]>
+    <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+    <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+<div class="x-body">
+    <form class="layui-form">
+
+        <div class="layui-form-item">
+            <label for="stockName" class="layui-form-label">
+                <span class="x-red">*</span>库存名称
+            </label>
+            <div class="layui-input-block">
+                <div class="layui-input-inline">
+                    <input type="hidden" id="stockId" name="sId"/>
+                    <input type="text" id="stockName" name="stock.name" required="" lay-verify="required"
+                           autocomplete="off" class="layui-input" readonly="readonly">
+                </div>
+                <a id="chooseStock" class="layui-btn layui-btn-sm" onclick="chooseStock()">选择</a>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label for="weight" class="layui-form-label">
+                <span class="x-red">*</span>损耗数量
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="weight" name="weight" required="" lay-verify="number"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">
+            </label>
+            <button class="layui-btn" lay-filter="save" lay-submit="">
+                保存
+            </button>
+        </div>
+        <input type="hidden" name="createTime" id="createTime"/>
+    </form>
+</div>
+<script>
+
+    var wasteId = null;
+
+    $(function () {
+        queryWaste();
+        initForm();
+    });
+
+    function initForm() {
+        layui.use(['form'], function () {
+            $ = layui.jquery;
+            var form = layui.form;
+            //监听提交
+            form.on('submit(save)', function (data) {
+                var hoshi = $.hoshi();
+
+                if (wasteId == null) {
+                    hoshi.post("/waste/add");
+                } else {
+                    hoshi.put("/waste/update");
+                    data.field.id = wasteId;
+                }
+                data.field.stock = null ;
+                hoshi.formParam(data.field)
+                    .onSuccess(function (data, msg) {
+                        // showToast(msg);
+                        parent.layui.layer.msg(msg);
+                        // x_admin_close();
+                        reloadTable(parent);
+                    }).linkStart();
+                return false;
+            });
+        });
+    }
+
+    function queryWaste() {
+        wasteId = getQueryString("id");
+        if (wasteId != null) {
+            $.hoshi()
+                .get("/waste/get/" + wasteId)
+                .onSuccess(function (data) {
+                    setWaste(data);
+                }).linkStart();
+        }
+    }
+
+    function setWaste(waste) {
+
+        $("#weight").val(waste.weight);
+        $("#createTime").val(waste.createTimeStr);
+        setStock(waste.stock);
+    }
+
+
+    function setStock(stock) {
+        $("#stockId").val(stock.id);
+        $("#stockName").val(stock.name);
+    }
+
+    function chooseStock() {
+        x_admin_show('选择库存', '../stock/choose.html', 900, 600, parent, null, null, function (data) {
+
+            if (parent.chooseStock != null) {
+                setStock(parent.chooseStock);
+            }
+        });
+    }
+</script>
+
+</body>
+
+</html>

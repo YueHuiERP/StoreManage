@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html class="x-admin-sm">
+
+<head>
+    <meta charset="UTF-8">
+    <title>库存管理</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi"/>
+    <link rel="stylesheet" href="../../css/font.css">
+    <link rel="stylesheet" href="../../css/xadmin.css">
+    <script type="text/javascript" src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <script type="text/javascript" src="../../lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../../js/xadmin.js"></script>
+    <script type="text/javascript" src="../../js/cookie.js"></script>
+    <script type="text/javascript" src="../../js/ajaxQuery.js"></script>
+    <script type="text/javascript" src="../../js/layui-table-select.js"></script>
+
+    <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+    <!--[if lt IE 9]>
+    <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+    <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+<div class="x-nav">
+      <span class="layui-breadcrumb">
+        <a href="">首页</a>
+          <!-- <a href="">演示</a>
+          <a>
+            <cite>导航元素</cite></a> -->
+      </span>
+    <a class="layui-btn layui-btn-small" style="line-height:1.6em;margin-top:3px;float:right"
+       href="javascript:location.replace(location.href);" title="刷新">
+        <i class="layui-icon" style="line-height:30px">ဂ</i></a>
+</div>
+<div class="x-body">
+    <div class="layui-row">
+        <form class="layui-form layui-col-md12 x-so">
+            <input class="layui-input" placeholder="开始日" name="startTime" id="startTime">
+            <input class="layui-input" placeholder="截止日" name="endTime" id="endTime">
+            <input type="hidden" class="layui-input" name="minRemain" id="minRemain">
+            <input type="text" name="name" id="name" placeholder="请输入库存名称" autocomplete="off" class="layui-input">
+            <div class="layui-input-inline">
+                <select name="goodsType" id="goodsType">
+                    <option value="">请选择商品类型</option>
+                    <option value="0">商品</option>
+                    <option value="1">包材</option>
+                </select>
+            </div>
+            <button class="layui-btn" lay-submit="" lay-filter="sreach"><i class="layui-icon">&#xe615;</i></button>
+        </form>
+    </div>
+    <table class="layui-table" id="stockTable" lay-filter="stockFilter">
+
+    </table>
+
+</div>
+<!-- 选择按钮 -->
+<script type="text/html" id="operateTpl">
+    <a class="layui-btn layui-btn-xs" lay-event="chooseStock">选择</a>
+</script>
+<!-- 图片 -->
+<script type="text/html" id="imgTpl">
+    <a href="" onclick="x_admin_show('图片显示','{{ d.goods.img }}',600,400,parent)">点击查看</a>
+</script>
+
+<script type="text/html" id="specsTpl">
+    {{d.goods.specs + d.goods.specsUnit}}
+</script>
+
+<!--<script type="text/html" id="remainAmountTpl">-->
+<!--    {{d.amount - d.productAmount - d.wasteAmount}}-->
+<!--</script>-->
+<script type="text/html" id="remainAmountTpl">
+    {{(d.remainAmount) + d.goods.specsUnit}}
+</script>
+
+<script>
+
+    $(function () {
+        parent.chooseStock = null;
+        bindInputParam("startTime");
+        bindInputParam("endTime");
+        bindInputParam("name");
+        bindInputParam("minRemain");
+        bindInputParam("goodsType") ;
+    });
+
+    layui.use('laydate', function () {
+        var laydate = layui.laydate;
+
+        //执行一个laydate实例
+        laydate.render({
+            elem: '#startTime' //指定元素
+        });
+
+        //执行一个laydate实例
+        laydate.render({
+            elem: '#endTime' //指定元素
+        });
+    });
+
+    function getChooseWhere() {
+        let param = getTableWhere(["startTime", "endTime", "name", "minRemain", "goodsType"]);
+        return param;
+    }
+
+
+    layui.use('table', function () {
+
+        var table = layui.table;
+
+        //初始化表格
+        table.render({
+            elem: '#stockTable'
+            //,height: 312
+            , url: '/stock/stockInPage' //数据接口
+            , page: true //开启分页
+            , cols: [[ //表头
+                {field: 'name', title: '名称'}
+                , {field: 'img', title: '图片', templet: '#imgTpl'}
+                , {field: 'specs', title: '规格', templet: "#specsTpl"}
+                , {field: 'amount', title: '入库数量'}
+                , {field: 'offsetAmount', title: '入库误差'}
+                , {field: 'id', title: '剩余', templet: "#remainAmountTpl"}
+                , {field: 'price', title: '价格'}
+                , {field: 'batch', title: '批次'}
+                , {field: 'provider', title: '供应商'}
+                , {field: 'description', title: '描述'}
+                , {field: 'createTimeStr', title: '入库时间'}
+                , {fixed: 'right', title: '操作', width: 80, align: 'center', toolbar: "#operateTpl"}
+            ]],
+            where: getChooseWhere()//生产选择库存不选择库存为0的
+        });
+
+//监听行工具事件
+        table.on('tool(stockFilter)', function (obj) { //注：tool是工具条事件名，test是table原始容器的属性 lay-filter="对应的值"
+            var data = obj.data; //获得当前行数据
+            var layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+
+            if (layEvent === 'chooseStock') {  //删除当前选中行
+                parent.chooseStock = data;
+                x_admin_close();
+            }
+        });
+    });
+</script>
+
+</body>
+
+</html>

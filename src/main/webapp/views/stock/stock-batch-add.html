@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html class="x-admin-sm">
+
+<head>
+    <meta charset="UTF-8">
+    <title>库存管理</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi"/>
+    <link rel="stylesheet" href="../../css/font.css">
+    <link rel="stylesheet" href="../../css/xadmin.css">
+    <script type="text/javascript" src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <script type="text/javascript" src="../../lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../../js/xadmin.js"></script>
+    <script type="text/javascript" src="../../js/cookie.js"></script>
+    <script type="text/javascript" src="../../js/ajaxQuery.js"></script>
+    <script type="text/javascript" src="../../js/layui-table-select.js"></script>
+    <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+    <!--[if lt IE 9]>
+    <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+    <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<script>
+
+    let selectIndex;
+
+    //选择库存名称
+    function chooseGoods(selectIndex) {
+        x_admin_show("选择库存类型", "../goods/chooseGoodsType.html", 900, 600, parent, null, null, function () {
+
+            if (parent.Gid != null) {
+                let selectStock = stockList[selectIndex];
+                selectStock.gId = parent.Gid;
+                selectStock.name = parent.goodsName;
+                reloadStockTable();
+            }
+        });
+        return false;
+    }
+
+    function chooseSupplier(selectIndex) {
+        x_admin_show("选择供应商", "../supplier/choose.html", 900, 600, parent, null, null, function () {
+
+            let supplier = parent.chooseSupplier;
+            if (supplier != null) {
+                let selectStock = stockList[selectIndex];
+                selectStock.supplierId = supplier.id;
+                selectStock.provider = supplier.name;
+                reloadStockTable();
+            }
+        });
+        return false;
+    }
+
+
+</script>
+
+<body>
+<div class="x-body">
+    <form class="layui-form" lay-filter="stock-form">
+
+        <div class="layui-form-item">
+            <label class="layui-form-label"> <span class="x-red">*</span>库存类型</label>
+            <div class="layui-input-inline">
+                <input type="text" class="layui-input" id="goodName"  readonly="readonly" >
+            </div>
+            <a class="layui-btn" onclick="addStocks()" style="margin-left: 15px"><i class="layui-icon"></i>选择库存类型</a>
+        </div>
+        <div class="layui-form-item">
+            <label for="amount" class="layui-form-label">
+                <span class="x-red">*</span>入库数量
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="amount" name="amount" required="" lay-verify="amount"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label for="amount" class="layui-form-label">
+                <span class="x-red">*</span>入库误差
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id=" offsetAmount" name="offsetAmount" required="" lay-verify="amount"
+                       autocomplete="off" class="layui-input" value="0">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label for="price" class="layui-form-label">
+                <span class="x-red">*</span>价格
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="price" name="price" required="" lay-verify="price"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+
+        <div class="layui-form-item" id="tableContainer">
+            <table class="layui-table layui-form" id="stockList" lay-filter="stockList">
+            </table>
+        </div>
+        <div class="layui-form-item">
+            <button type="button" class="layui-btn" lay-filter="addStock" lay-submit="" id="addStock">
+                复制并增加
+            </button>
+            <button type="button" class="layui-btn" lay-filter="add" lay-submit="" id="add">
+                提交
+            </button>
+        </div>
+    </form>
+</div>
+
+
+<script type="text/html" id="providerTpl">
+    <input type="text" class="layui-input" value="{{d.provider}}" readonly="readonly"
+           onclick="chooseSupplier({{ d.LAY_TABLE_INDEX }})" placeholder="选择供应商"/>
+</script>
+
+<script type="text/html" id="nameTpl">
+    <input type="text" class="layui-input" value="{{d.name}}" readonly="readonly"
+           onclick="chooseGoods({{ d.LAY_TABLE_INDEX }})" placeholder="选择库存类型"/>
+</script>
+
+<script type="text/html" id="operateTpl">
+    <a class='x-red' href='#' onclick="deleteStock({{ d.LAY_TABLE_INDEX}})">删除</a>
+</script>
+
+<script type="text/html" id="indexTpl">
+    {{  d.LAY_TABLE_INDEX + 1}}
+</script>
+
+<script type="text/javascript">
+    let stockList = [];
+    let tablns = null;
+
+    let reg = /^(([1-9]+)|([0-9]+\.[0-9]{1,2}))$/;
+    let int = /^0|[0-9]*[1-9][0-9]*$/;
+
+    let options = {
+        elem: "#stockList",
+        data: stockList,
+        height: "180",
+        limit: Number.MAX_VALUE,
+        cols: [[ //表头
+            , {field: 'LAY_TABLE_INDEX', title: '序号', width: 60, templet: '#indexTpl'}
+            , {field: 'name', title: '名称', width: 150, templet: '#nameTpl'}
+            , {field: 'amount', title: '入库数量', width: 80, edit: 'text'}
+            , {field: 'offsetAmount', title: '入库误差', width: 80, edit: 'text'}
+            , {field: 'price', title: '价格', width: 80, edit: 'text'}
+            , {field: 'provider', title: '供应商', width: 150, templet: '#providerTpl'}
+            , {field: 'description', title: '描述', width: 200, edit: 'text'}
+            , {fixed: 'right', title: '操作', width: 80, align: 'center', toolbar: '#operateTpl', edit: 'text'}
+        ]],
+        text: {
+            none: "请添加库存"
+        },
+        done: function () {
+        }
+    };
+
+    let verify = {
+        name: function (value, item) {
+            if (value === "" || value == null) {
+                return '请选择库存类型';
+            }
+        },
+        gId: function (value, item) {
+            if (value === "" || value == null) {
+                return '请选择库存类型';
+            }
+        },
+        amount: function (value, item) {
+            if (!int.test(value)) {
+                return "入库数量请输入正整数";
+            }
+            if (value.length > 8) {
+                return "入库数量长度不能超过8";
+            }
+        },
+        offsetAmount: function (value, item) {
+            if (!int.test(value)) {
+                return "入库误差请输入正整数";
+            }
+            if (value.length > 8) {
+                return "入库误差长度不能超过8";
+            }
+        },
+        price: function (value, item) {
+            if (!(int.test(value) || reg.test(value))) {
+                return "请输入正确的价格！(正数有效值小数点后2位)";
+            }
+            if (value.length > 8) {
+                return "价格长度不超过8";
+            }
+        },
+        provider: function (value, item) {
+            if (value === "" || value == null) {
+                return "请选择供应商";
+            }
+        },
+        supplierId: function (value, item) {
+            if (value === "" || value == null) {
+                return "请选择供应商";
+            }
+        },
+        description: function (value, item) {
+            if (value.length > 50) {
+                return "描述信息不超过50";
+            }
+        },
+        LAY_TABLE_INDEX: function () {
+        }
+    };
+
+    layui.use(['table'], function () {
+        let table = layui.table;
+        tablns = table.render(options);
+
+        table.on("edit(stockList)", function (obj) {
+            let value = obj.value;
+            let field = obj.field;
+            let inputElem = $(this);
+            let tdElem = inputElem.closest('td');
+            let valueOld = inputElem.prev().text();
+            let data = {};
+            let errMsg = verify[field](value); // 校验
+            if (errMsg) {
+                // 如果不满足的时候
+                layer.msg(errMsg, {time: 1000, anim: 6, shade: 0.01});
+                data[field] = valueOld;
+                inputElem.blur();
+                obj.update(data);
+                tdElem.click();
+            }
+        })
+    })
+
+    layui.use(["jquery", "upload", "form", "layer", "element"], function () {
+        var $ = layui.$,
+            form = layui.form;
+
+        //表单提交事件
+        form.on('submit(add)', function (result) {
+            if (stockList.length <= 0) {
+                showToast("至少添加一条入库记录");
+            } else {
+                let last = stockList[stockList.length - 1];
+                let err = judgeStock(last);
+                if (err != null) {//提交时判断输入的正确性
+                    showShake(err) ;
+                } else {
+                    let data = JSON.stringify(stockList);
+                    $.hoshi()
+                        .post("/stock/add/all")
+                        .jsonParam(data)
+                        .onSuccess(function (data, msg, code) {
+                            showToast(msg, parent.layui);
+                            //关闭当前frame页
+                            reloadTable(parent);
+                        })
+                        .linkStart()
+                }
+            }
+            //return false; //阻止表单跳转。
+        });
+
+        form.on('submit(addStock)', function (result) {
+            let last;
+            if (stockList.length > 0) {
+                last = stockList[stockList.length - 1];
+                let errorMsg = judgeStock(last);
+                if (errorMsg) {
+                    layer.msg(errorMsg, {time: 1000, anim: 6, shade: 0.01});
+                    return;
+                }
+            }
+            let newStock = {
+                name: "",
+                gId: null,
+                amount: null,
+                offsetAmount: 0,
+                price: null,
+                provider: "",
+                supplierId: null,
+                description: "",
+            };
+            if (last != null) {
+                //复制最新输入信息并添加
+                copyStock(last, newStock);
+            }
+            stockList.push(newStock);
+            reloadStockTable();
+        })
+    });
+
+    function reloadStockTable() {
+        let container;            //layui table 父div
+        let tbBody = null;  //当前的layui table
+        let top = 0;
+        let left = 0;
+
+        container = document.getElementById('tableContainer'); //table的父div
+        if (container != null) {
+            tbBody = container.getElementsByClassName("layui-table-main");
+        }
+
+        if (tbBody != null && tbBody.length > 0) {
+            top = tbBody[0].scrollTop;
+            left = tbBody[0].scrollLeft;
+        }
+
+        tablns.reload({data: stockList});
+        //还原scroll位置
+        if (tbBody != null && tbBody.length > 0) {
+            tbBody[0].scrollTop = top;
+            tbBody[0].scrollLeft = left;
+        }
+    }
+
+    function deleteStock(tableIndex) {
+        for (let index in stockList) {
+            let stock = stockList[index];
+            if (stock.LAY_TABLE_INDEX == tableIndex) {
+                stockList.splice(index, 1);
+                break;
+            }
+        }
+        reloadStockTable();
+    }
+
+    function copyStock(oldStock, newStock) {
+        let pros = Object.keys(newStock);
+        for (let i = 0; i < pros.length; i++) {
+            let pro = pros[i];
+            newStock[pro] = oldStock[pro];
+        }
+    }
+
+    function judgeStock(stock) {
+        let errorMsg;
+        let pros = Object.keys(stock);
+        for (let i = 0; i < pros.length; i++) {
+            let pro = pros[i];
+            console.log(pro);
+            errorMsg = verify[pro](stock[pro]);
+            if (errorMsg) {
+                break;
+            }
+        }
+        return errorMsg;
+    }
+</script>
+
+
+</body>
+</html>

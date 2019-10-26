@@ -1,0 +1,22 @@
+/* 防止下拉框的下拉列表被隐藏---必须设置--- 此样式和表格的样式有冲突 如果表格列数太多 会出现错乱的情况 目前我的解决方法是忽略下拉框的美化渲染 <select lay-ignore> */
+/*.layui-table-cell {*/
+    /*overflow: visible;*/
+/*}*/
+
+/*.layui-table-box {*/
+    /*overflow: visible;*/
+/*}*/
+
+/*.layui-table-body {*/
+    /*overflow: visible;*/
+/*}*/
+/*!* 设置下拉框的高度与表格单元相同 *!*/
+/*td .layui-form-select{*/
+    /*margin-top: -10px;*/
+    /*margin-left: -15px;*/
+    /*margin-right: -15px;*/
+/*}*/
+
+.layui-table-body{
+    min-height: 384px;
+}

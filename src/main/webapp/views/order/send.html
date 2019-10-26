@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html class="x-admin-sm">
+
+<head>
+    <meta charset="UTF-8">
+    <title>订单添加</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi"/>
+    <link rel="stylesheet" href="../../css/font.css">
+    <link rel="stylesheet" href="../../css/xadmin.css">
+    <script type="text/javascript" src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <script type="text/javascript" src="../../lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../../js/xadmin.js"></script>
+    <script type="text/javascript" src="../../js/cookie.js"></script>
+    <script type="text/javascript" src="../../js/ajaxQuery.js"></script>
+    <script type="text/javascript" src="../../js/layui-table-select.js"></script>
+    <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+    <!--[if lt IE 9]>
+    <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+    <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+<div class="x-body">
+    <form class="layui-form">
+        <div class="layui-form-item">
+            <label for="name" class="layui-form-label">
+                <span class="x-red">*</span>订单名称
+            </label>
+            <div class="layui-input-inline">
+                <input type="hidden" id="parentId" name="parentId"/>
+                <input type="text" id="name" name="name" required="" lay-verify="required"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+
+        <!--<div class="layui-form-item">-->
+        <!--<label for="serial" class="layui-form-label">-->
+        <!--<span class="x-red">*</span>订单编号-->
+        <!--</label>-->
+        <!--<div class="layui-input-inline">-->
+        <!--<input type="text" id="serial" name="serial" required="" lay-verify="required"-->
+        <!--autocomplete="off" class="layui-input">-->
+        <!--</div>-->
+        <!--</div>-->
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">
+                <span class="x-red">*</span>成品名称
+            </label>
+            <div class="layui-input-block">
+                <a id="stockName" class="layui-btn layui-btn-sm" onclick="chooseProduct()">选择</a>
+                <table class="layui-table layui-form" id="productList" lay-filter="productList">
+                </table>
+            </div>
+        </div>
+
+
+        <div class="layui-form-item">
+            <label for="status" class="layui-form-label">
+                <span class="x-red">*</span>订单状态
+            </label>
+            <div class="layui-input-inline">
+                <select id="status" name="status" class="valid" readonly="readonly" >
+                    <option value="1" selected = "selected">已发货</option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">
+            </label>
+            <button class="layui-btn" lay-filter="add" lay-submit="">
+                保存
+            </button>
+        </div>
+        <input type="hidden" name="createTime" id="createTime"/>
+    </form>
+</div>
+
+<script type="text/html" id="pNameTpl">
+    {{d.product.name}}
+</script>
+
+<script type="text/html" id="pSpecsTpl">
+    {{ d.product.specs}}
+</script>
+
+<script type="text/html" id="operateTpl">
+    <a class='x-red' href='#' onclick="delChild('{{ d.product.id }}')">删除</a>
+</script>
+
+<script>
+
+    var orderId = null;
+
+    var childOrders = [];
+
+    var options = {
+        elem: "#productList",
+        data: childOrders,
+        cols: [[
+            {field: "name", title: "成品名称", templet: "#pNameTpl"},
+            {field: "amount", edit: "text", title: "成品数量"},
+            {field: "id", title: "操作", toolbar: "#operateTpl"},
+        ]],
+        text: {
+            none: "请添加成品"
+        },
+    };
+
+    var tblns = null;
+
+    $(function () {
+
+        bindInputParam("parentId") ;
+        bindInputParam("name") ;
+
+        initForm();
+    });
+
+    function initForm() {
+        layui.use(['form', 'table'], function () {
+            $ = layui.jquery;
+            var form = layui.form;
+            var table = layui.table;
+            //监听提交
+            form.on('submit(add)', function (data) {
+                var hoshi = $.hoshi();
+
+                if (orderId == null) {
+                    hoshi.post("/order/add");
+                } else {
+                    hoshi.put("/order/update");
+                }
+
+                var order =  data.field ;
+                order.id = orderId;
+                order.subOrders = childOrders;
+                order.status = parseInt(order.status);
+                order.createTimeStr = order.createTime ;
+                delete order.createTime ;
+
+                hoshi.jsonParam(data.field)
+                    .onSuccess(function (data, msg) {
+                        parent.layui.layer.msg(msg);
+                        // x_admin_close();
+                        reloadTable(parent);
+                    }).linkStart();
+                return false;
+            });
+
+            tblns = table.render(options);
+
+            queryOrder();
+        });
+    }
+
+    function queryOrder() {
+        orderId = getQueryString("id");
+        if (orderId != null) {
+            $.hoshi()
+                .get("/order/get/" + orderId)
+                .onSuccess(function (data) {
+                    setOrder(data);
+                }).linkStart();
+        }
+    }
+
+    function setOrder(order) {
+
+        $("#name").val(order.name);
+        $("#amount").val(order.amount);
+        $("#status").val(order.status);
+        $("#createTime").val(order.createTimeStr);
+        $("#parentId").val(order.parentId);
+        layui.use('form', function () {
+            var form = layui.form;
+            form.render('select');
+        });
+        childOrders = [];
+        for (var i in order.subOrders) {
+            var subOrder = order.subOrders[i];
+            // subOrder.createTime = subOrder.createTimeStr;
+            subOrder.pId = subOrder.product.id;
+            childOrders.push(subOrder);
+        }
+        reloadSubOrderList();
+    }
+
+    function delChild(productId) {
+        for (var index in childOrders) {
+            var order = childOrders[index];
+            if (order.product.id == productId) {
+                childOrders.splice(index, 1);
+                break;
+            }
+        }
+        reloadSubOrderList();
+    }
+
+
+    function addChild(child) {
+        var has = false;
+        for (var index in  childOrders) {
+            var order = childOrders[index];
+            if (order.product.id == child.product.id) {
+                has = true;
+                break;
+            }
+        }
+
+        if (!has) {
+            childOrders.push(child);
+            reloadSubOrderList();
+        } else {
+            showToast("成品已添加");
+        }
+    }
+
+    function reloadSubOrderList() {
+        tblns.reload({data: childOrders});
+    }
+
+    function chooseProduct() {
+        x_admin_show('选择成品', '../product/choose.html', 900, 600, parent, null, null, function (data) {
+            if (parent.chooseProduct != null) {
+                var childOrder = {
+                    product: parent.chooseProduct,
+                    pId: parent.chooseProduct.id,
+                    amount: 1,
+                };
+                addChild(childOrder);
+            }
+        });
+    }
+</script>
+
+</body>
+
+</html>

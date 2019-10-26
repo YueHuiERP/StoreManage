@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html class="x-admin-sm">
+
+<head>
+    <meta charset="UTF-8">
+    <title>商品列表</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi"/>
+    <link rel="stylesheet" href="../../css/font.css">
+    <link rel="stylesheet" href="../../css/xadmin.css">
+    <script type="text/javascript" src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <script type="text/javascript" src="../../lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../../js/xadmin.js"></script>
+    <script type="text/javascript" src="../../js/cookie.js"></script>
+    <script type="text/javascript" src="../../js/ajaxQuery.js"></script>
+    <script type="text/javascript" src="../../js/layui-table-select.js"></script>
+    <script type="text/javascript" src="../../jsLib/HoshiSingle.js"></script>
+    <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+    <!--[if lt IE 9]>
+    <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+    <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+
+    <![endif]-->
+</head>
+
+<body>
+<div class="x-nav">
+      <span class="layui-breadcrumb">
+        <a>
+            <cite>商品</cite>
+        </a>
+        <a>
+          <cite>商品列表</cite>
+        </a>
+      </span>
+    <a class="layui-btn layui-btn-small" style="line-height:1.6em;margin-top:3px;float:right"
+       href="javascript:location.replace(location.href);" title="刷新">
+        <i class="layui-icon" style="line-height:30px">ဂ</i></a>
+</div>
+<div class="x-body">
+    <div class="layui-row">
+        <form class="layui-form layui-col-md12 x-so">
+
+            <!--//<label class="layui-form-label">搜索类型</label>-->
+            <div class="layui-input-inline">
+                <select name="type" id="type">
+                    <option value="0" selected="selected">商品</option>
+                </select>
+            </div>
+
+            <input type="text" name="name" id="name" placeholder="名称" autocomplete="off" class="layui-input">
+            <button class="layui-btn" lay-submit="" lay-filter="sreach"><i class="layui-icon">&#xe615;</i></button>
+        </form>
+    </div>
+
+    <table class="layui-table layui-form" id="goods" lay-filter="goods">
+
+    </table>
+
+</div>
+
+<script type="text/html" id="barDemo">
+    <button class="layui-btn layui-btn layui-btn-xs" onclick="deliver('{{d.id}}')"><i class="layui-icon">&#xe642;</i>打单</button>
+    <button class="layui-btn layui-btn layui-btn-xs" onclick="batchSend('{{d.id}}')"><i class="layui-icon">&#xe642;</i>发货</button>
+</script>
+
+<!-- 显示当前图片 -->
+<script type="text/html" id="imgTpl">
+    <img onclick="openImg('{{d.img}}')" src="{{d.img}}" style="width: 28px;height: 28px;"/>
+</script>
+
+<script type="text/html" id="specsTpl">
+    {{d.specs + d.specsUnit}}
+</script>
+
+<script type="text/html" id="sendAmountTpl">
+    {{d.sendAmount + d.specsUnit}}
+</script>
+
+<script>
+
+    function openImg(url) {
+        layer.open({
+            type: 2,
+            title: "图片",
+            shadeClose: true,   //点击遮罩关闭 即单击iframe外区域关闭iframe
+            shade: 0.5,
+            area: ['500px', '500px'],
+            scrollbar: false,   //页面滚动条事件
+            content: url, //iframe的url
+            success: function (layero, index) {
+                layer.iframeAuto(index);
+            }
+        });
+    }
+    
+    $(function () {
+        // bindInputParam("type");
+        bindInputParam("name");
+    });
+
+    layui.use('table', function () {
+        var table = layui.table;
+
+        //table表格初始化
+        table.render({
+            elem: '#goods'
+            //,height: 312
+            , url: '/goods/goodInPage' //数据接口
+            , method: 'GET'
+            , page: true //开启分页
+            , toolbar: "#toolBar"
+            , cols: [[ //表头
+                {field: 'id', title: 'ID', type: 'checkbox', sort: true, fixed: 'left'}
+                , {field: 'name', title: '名称'}
+                , {field: 'img', title: '图片', templet: '#imgTpl'}
+                , {field: 'specs', title: '规格', templet: '#specsTpl'}
+                , {field: 'type', title: '类型'}
+                , {field: 'sendAmount', title: '发货量', templet: '#sendAmountTpl'}
+                , {fixed: 'right', title: '操作', width: 180, align: 'center', toolbar: '#barDemo'}
+            ]]
+            , done: function (res, curr, count) {
+                $("[data-field='type']").children().each(function () {
+                     if ($(this).text() == '0') {
+                        $(this).text("商品")
+                    } else if ($(this).text() == '1') {
+                        $(this).text("包材")
+                    }
+                });
+            },
+            where: getTableWhere(["type", "name"])
+        });
+    });
+
+    function deliver(id) {
+        x_admin_show("订单添加", 'prepare.html?gId=' + id, 650, 450);
+    }
+    
+    function batchSend(id) {
+        x_admin_show("批量发货", "batch-send.html?gId=" + id, 800, 450) ;
+    }
+
+</script>
+
+</body>
+
+</html>

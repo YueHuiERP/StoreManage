@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html class="x-admin-sm">
+
+<head>
+    <meta charset="UTF-8">
+    <title>订单添加</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi"/>
+    <link rel="stylesheet" href="../../css/font.css">
+    <link rel="stylesheet" href="../../css/xadmin.css">
+    <script type="text/javascript" src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <script type="text/javascript" src="../../lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../../js/xadmin.js"></script>
+    <script type="text/javascript" src="../../js/cookie.js"></script>
+    <script type="text/javascript" src="../../js/ajaxQuery.js"></script>
+    <script type="text/javascript" src="../../js/layui-table-select.js"></script>
+    <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+    <!--[if lt IE 9]>
+    <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+    <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+<div class="x-body">
+    <form class="layui-form">
+        <div class="layui-form-item">
+            <label for="name" class="layui-form-label">
+                <span class="x-red">*</span>订单名称
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="name" name="name" required="" lay-verify="required"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+
+        <!--<div class="layui-form-item">-->
+        <!--<label for="serial" class="layui-form-label">-->
+        <!--<span class="x-red">*</span>订单编号-->
+        <!--</label>-->
+        <!--<div class="layui-input-inline">-->
+        <!--<input type="text" id="serial" name="serial" required="" lay-verify="required"-->
+        <!--autocomplete="off" class="layui-input">-->
+        <!--</div>-->
+        <!--</div>-->
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">
+                <span class="x-red">*</span>商品
+            </label>
+            <div class="layui-input-block">
+                <a id="stockName" class="layui-btn layui-btn-sm" onclick="chooseGoods()">选择</a>
+                <table class="layui-table layui-form" id="goodsList" lay-filter="goodsList">
+                </table>
+            </div>
+        </div>
+
+
+        <div class="layui-form-item">
+            <label for="status" class="layui-form-label">
+                <span class="x-red">*</span>订单状态
+            </label>
+            <div class="layui-input-inline">
+                <select id="status" name="status" class="valid" readonly="readonly">
+                    <option value="0" selected="selected">待发货</option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">
+            </label>
+            <button class="layui-btn" lay-filter="add" lay-submit="">
+                保存
+            </button>
+        </div>
+        <input type="hidden" name="createTime" id="createTime"/>
+    </form>
+</div>
+
+<script type="text/html" id="pNameTpl">
+    {{d.product.name}}
+</script>
+
+<script type="text/html" id="pSpecsTpl">
+    {{ d.product.specs}}
+</script>
+
+<script type="text/html" id="sendAmountTpl">
+    {{ d.sendAmount / d.specsValue}}
+</script>
+
+<script type="text/html" id="operateTpl">
+    <a class='x-red' href='#' onclick="delItem('{{ d.gId }}')">删除</a>
+</script>
+
+<script>
+
+    var orderId = null;
+
+    // var childOrders = [];
+
+    var itemList = [];
+
+    var options = {
+        elem: "#goodsList",
+        data: itemList,
+        cols: [[
+            {field: "name", title: "商品名称"},
+            {field: "specs", edit: "text", title: "商品规格"},
+            {field: "specsUnit", edit: "text", title: "规格单位"},
+            {field: "amount", edit: "text", title: "商品数量"},
+            {field: "sendAmount", title: "已发货量", templet:"#sendAmountTpl"},
+            {field: "id", title: "操作", toolbar: "#operateTpl"},
+        ]],
+        text: {
+            none: "请添加原料"
+        },
+    };
+
+    var tblns = null;
+
+    $(function () {
+        initForm();
+    });
+
+    function initForm() {
+        layui.use(['form', 'table'], function () {
+            $ = layui.jquery;
+            var form = layui.form;
+            var table = layui.table;
+            //监听提交
+            form.on('submit(add)', function (data) {
+                var hoshi = $.hoshi();
+
+                if (orderId == null) {
+                    hoshi.post("/order/add");
+                } else {
+                    hoshi.put("/order/update");
+                }
+
+                var order = data.field;
+                order.id = orderId;
+                order.items = itemList;
+                order.status = parseInt(order.status);
+                order.createTimeStr = order.createTime;
+                delete order.createTime;
+
+                hoshi.jsonParam(data.field)
+                    .onSuccess(function (data, msg) {
+                        parent.layui.layer.msg(msg);
+                        // x_admin_close();
+                        reloadTable(parent);
+                    }).linkStart();
+                return false;
+            });
+
+            tblns = table.render(options);
+
+            queryOrder();
+        });
+    }
+
+    function queryOrder() {
+        orderId = getQueryString("id");
+        if (orderId != null) {
+            $.hoshi()
+                .get("/order/get/" + orderId)
+                .onSuccess(function (data) {
+                    setOrder(data);
+                }).linkStart();
+        }
+    }
+
+    function setOrder(order) {
+
+        $("#name").val(order.name);
+        $("#amount").val(order.amount);
+        $("#status").val(order.status);
+        $("#createTime").val(order.createTimeStr);
+        layui.use('form', function () {
+            var form = layui.form;
+            form.render('select');
+        });
+
+
+        itemList = order.items;
+        for (var index in itemList) {
+            var item = itemList[index];
+            item.name = item.goods.name;
+            item.gId = item.goods.id;
+        }
+
+        reloadItemList();
+
+    }
+
+    function delItem(goodsId) {
+
+        for (var index in itemList) {
+            var item = itemList[index];
+            if (item.gId == goodsId) {
+                itemList.splice(index, 1);
+                break;
+            }
+        }
+        reloadItemList();
+    }
+
+
+    function addItem(newItem) {
+        var has = false;
+        for (var index in  itemList) {
+            var item = itemList[index];
+            if (item.gId == newItem.gId) {
+                has = true;
+                break;
+            }
+        }
+
+        if (!has) {
+            newItem.sendAmount = 0;
+            itemList.push(newItem);
+            reloadItemList();
+        } else {
+            showToast("成品已添加");
+        }
+    }
+
+    function reloadItemList() {
+        if ($("#name").val() == "" || itemList.length === 0) {
+            var name = "";
+            for (var i in itemList) {
+                var s = itemList[i];
+                //如果是商品
+                if (s.goods.type == 0) {
+                    name += s.goods.name + " ";
+                }
+            }
+            $("#name").val(name);
+        }
+        tblns.reload({data: itemList});
+    }
+
+    function chooseGoods() {
+        x_admin_show('选择商品', '../goods/chooseGoodsType.html', 900, 600, parent, null, null, function (data) {
+            if (parent.goods != null) {
+                var goods = parent.goods;
+                var item = {
+                    amount: 1,
+                    gId: goods.id,
+                    specs: goods.specs,
+                    specsUnit: goods.specsUnit,
+                    specsValue: goods.specsValue,
+                    name: goods.name,
+                    goods: goods,
+                };
+                addItem(item);
+            }
+        });
+    }
+</script>
+
+</body>
+
+</html>

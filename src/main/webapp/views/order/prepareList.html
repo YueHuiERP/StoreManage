@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html class="x-admin-sm">
+
+<head>
+    <meta charset="UTF-8">
+    <title>欢迎页面-X-admin2.1</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi"/>
+    <link rel="stylesheet" href="../../css/font.css">
+    <link rel="stylesheet" href="../../css/xadmin.css">
+    <link rel="stylesheet" href="../../css/layui-table-select.css">
+    <script type="text/javascript" src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <script type="text/javascript" src="../../lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../../js/xadmin.js"></script>
+    <script type="text/javascript" src="../../js/cookie.js"></script>
+    <script type="text/javascript" src="../../js/ajaxQuery.js"></script>
+    <script type="text/javascript" src="../../js/layui-table-select.js"></script>
+    <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+    <!--[if lt IE 9]>
+    <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+    <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <style>
+        .laytable-cell-1-0-3 {
+            overflow: visible;
+        }
+    </style>
+</head>
+
+<body>
+<div class="x-nav">
+      <span class="layui-breadcrumb">
+        <a href="">首页</a>
+        <a href="">演示</a>
+        <a>
+          <cite>导航元素</cite></a>
+      </span>
+    <a class="layui-btn layui-btn-small" style="line-height:1.6em;margin-top:3px;float:right"
+       href="javascript:location.replace(location.href);" title="刷新">
+        <i class="layui-icon" style="line-height:30px">ဂ</i></a>
+</div>
+<div class="x-body">
+    <div class="layui-row">
+        <form class="layui-form layui-col-md12 x-so" id="orderForm">
+            <input class="layui-input" placeholder="开始日" name="startTime" id="startTime">
+            <input class="layui-input" placeholder="截止日" name="endTime" id="endTime">
+            <div class="layui-input-inline">
+                <select name="status" id="status">
+                    <option value="0" selected="selected">待发货</option>
+                </select>
+            </div>
+            <input type="text" id="name" name="name" placeholder="请输入订单名称" autocomplete="off" class="layui-input">
+            <button class="layui-btn" lay-submit="" lay-filter="sreach"><i class="layui-icon">&#xe615;</i></button>
+            <a class="layui-btn" onclick="exportExcel('order', 'orderForm')"><i class="layui-icon">导出</i></a>
+        </form>
+    </div>
+    <table class="layui-table layui-form" id="orderList" lay-filter="orderList">
+    </table>
+</div>
+
+<!--订单列表工具栏-->
+<script type="text/html" id="toolBar">
+    <div class="layui-btn-container">
+        <button class="layui-btn layui-btn-danger layui-btn-sm" lay-event="deleteAll">批量删除</button>
+        <button class="layui-btn layui-btn-sm" lay-event="prepare">添加</button>
+    </div>
+</script>
+
+<!--订单操作按钮-->
+<script type="text/html" id="operateTpl">
+    <button class="layui-btn layui-btn-sm" onclick="x_admin_show('编辑订单','prepare.html?id={{d.id}}',650,400)"><i
+            class="layui-icon">&#xe642;</i>编辑
+    </button>
+
+    <button class="layui-btn layui-btn-sm" onclick="x_admin_show('订单发货','send.html?parentId={{d.id}}&name={{d.name}}',650,400)"><i
+            class="layui-icon">&#xe6f6;</i>发货
+    </button>
+
+    <button class="layui-btn layui-btn-danger" onclick="deleteOrder('{{d.id}}')"><i class="layui-icon">&#xe640;</i>删除
+    </button>
+
+</script>
+
+<!--<div class="layui-form">-->
+<!--<div class="layui-inline">-->
+<!--<select name="status" lay-filter="statusSelect" lay-search>-->
+<!--<option value="0" {{ d.status== 0 ?-->
+<!--'selected' : '' }}>待发货</option>-->
+<!--<option value="1" {{ d.status== 1 ?-->
+<!--'selected' : '' }}>已发货</option>-->
+<!--</select>-->
+<!--</div>-->
+<!--</div>-->
+<!--订单状态模板-->
+<script type="text/html" id="statusTpl">
+    {{d.status == 0 ? '待发货' : '已发货' }}
+</script>
+
+<!--订单日期创建日期模板-->
+<!--<input class="layui-input" placeholder="创建时间" name="createTime"-->
+<!--value="" readonly="readonly"/>-->
+<script type="text/html" id="createTimeTpl">
+    {{d.createTimeStr}}
+</script>
+
+
+<script>
+
+    $(function () {
+        bindInputParam("startTime");
+        bindInputParam("endTime");
+        bindInputParam("name");
+    });
+    layui.use('laydate', function () {
+        var laydate = layui.laydate;
+
+        //执行一个laydate实例
+        laydate.render({
+            elem: '#startTime' //指定元素
+        });
+
+        //执行一个laydate实例
+        laydate.render({
+            elem: '#endTime' //指定元素
+        });
+    });
+    layui.use(['table', 'form'], function () {
+        var table = layui.table;
+        var form = layui.form;
+        table.render({ //其它参数在此省略
+            url: "/order/list",
+            elem: "#orderList",
+            page: true,
+            toolbar: "#toolBar",
+            cols: [[
+                {type: 'checkbox', title: "ID"},
+                {field: 'name', title: "订单名称"},
+                {field: 'status', width: 120, templet: '#statusTpl', title: "订单状态"},
+                {field: 'createTime', width: 200, templet: '#createTimeTpl', title: "创建时间"},
+                {field: 'id', templet: '#operateTpl', title: "操作"}
+            ]],
+            where: getTableWhere(["startTime", "endTime", "name", "status"]),
+            done: function (res, curr, count) {
+                //表格渲染完成之后 渲染日期输入框
+                renderDateInput();
+            }
+        });
+        table.on('edit(orderList)', function (obj) {
+            var value = obj.value //得到修改后的值
+                , data = obj.data //得到所在行所有键值
+                , field = obj.field; //得到字段
+            data[field] = value;
+            updateOrder(data);
+        });
+
+        table.on('toolbar(orderList)', function (obj) {
+            var checkStatus = table.checkStatus(obj.config.id);
+            switch (obj.event) {
+                case 'deleteAll':
+                    var data = checkStatus.data;
+                    if (data.length <= 0) {
+                        layer.msg("请至少选择一条订单");
+                    } else {
+                        var ids = [];
+                        for (var i = 0; i < data.length; i++) {
+                            ids[i] = data[i].id;
+                        }
+                        deleteAllOrders(ids);
+                    }
+                    break;
+                case 'send':
+                    x_admin_show("订单添加", 'send.html', 650, 400);
+                    break;
+                case 'prepare':
+                    x_admin_show("订单添加", 'prepare.html', 650, 400);
+                    break;
+            }
+        });
+
+        form.on('select(statusSelect)', function (obj) {
+            var returnObj = getSelectObject(table, "orderList", "status", obj);
+            var order = returnObj.object;
+            var oldVal = returnObj.oldValue;
+            //判断状态是否修改
+            if (order.status != oldVal) {
+                updateOrder(order);
+            }
+        })
+    })
+
+    function deleteAllOrders(ids) {
+        $.hoshi()
+            .delete("/order/delete/all")
+            .jsonParam(ids)
+            .onSuccess(function (data, msg) {
+                if (data) {
+                    showToast(msg);
+                    reloadTable();
+                } else {
+                    showError(msg);
+                }
+            }).linkStart();
+    }
+
+    //渲染日期输入
+    function renderDateInput() {
+        layui.use(['laydate', 'table'], function () {
+            var laydate = layui.laydate;
+            var table = layui.table;
+            $(".dateInput").each(function (e) {
+                laydate.render({
+                    elem: this, //指定元素
+                    type: 'datetime',
+                    done: function (value) {
+                        var input = this.elem[0];
+                        //根据单元格元素 获取当前行的 数据缓存
+                        var order = getCurRowData(table, "orderList", input);
+                        //值不相等 才更新
+                        if (order.createTimeStr !== value) {
+                            order.createTimeStr = value;
+                            updateOrder(order);
+                        }
+                    }
+                });
+            })
+        });
+    }
+
+    /**
+     * 更新订单
+     * @param order 订单信息
+     */
+    function updateOrder(order) {
+        if (order.product != null) {
+            order.pId = order.product.id;
+            delete order.product;
+        }
+
+        if (order.parent != null) {
+            order.parentId = order.parent.id;
+            delete order.parentId;
+        }
+
+        if (order.stock != null) {
+            order.sId = order.stock.id;
+            delete order.sId;
+        }
+
+        order.createTime = order.createTimeStr;
+
+        $.hoshi()
+            .put("/order/update")
+            .formParam(order)
+            .onResponse(function () {
+                reloadTable();
+            })
+            .onSuccess(function (data, msg) {
+                if (data) {
+                    showToast(msg);
+                } else {
+                    showError(msg);
+                }
+            }).linkStart();
+    }
+
+    /**
+     * 删除订单
+     * @param id 需要删除的订单id
+     */
+    function deleteOrder(id) {
+        $.hoshi()
+            .delete("/order/delete/" + id)
+            .onSuccess(function (data, msg) {
+                if (data) {
+                    showToast(msg);
+                    reloadTable();
+                } else {
+                    showError(msg);
+                }
+            }).linkStart();
+    }
+
+</script>
+</body>
+
+</html>

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html class="x-admin-sm">
+
+<head>
+    <meta charset="UTF-8">
+    <title>商品列表</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi"/>
+    <link rel="stylesheet" href="../../css/font.css">
+    <link rel="stylesheet" href="../../css/xadmin.css">
+    <script type="text/javascript" src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <script type="text/javascript" src="../../lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../../js/xadmin.js"></script>
+    <script type="text/javascript" src="../../js/cookie.js"></script>
+    <script type="text/javascript" src="../../js/ajaxQuery.js"></script>
+    <script type="text/javascript" src="../../js/layui-table-select.js"></script>
+    <script type="text/javascript" src="../../jsLib/HoshiSingle.js"></script>
+    <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+    <!--[if lt IE 9]>
+    <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+    <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+
+    <![endif]-->
+</head>
+
+<body>
+<div class="x-nav">
+      <span class="layui-breadcrumb">
+        <a>
+            <cite>商品</cite>
+        </a>
+        <a>
+          <cite>商品列表</cite>
+        </a>
+      </span>
+    <a class="layui-btn layui-btn-small" style="line-height:1.6em;margin-top:3px;float:right"
+       href="javascript:location.replace(location.href);" title="刷新">
+        <i class="layui-icon" style="line-height:30px">ဂ</i></a>
+</div>
+<div class="x-body">
+    <div class="layui-row">
+        <form class="layui-form layui-col-md12 x-so">
+
+            <div class="layui-input-inline">
+                <select name="type" id="type">
+                    <option value=""></option>
+                    <option value="0">商品</option>
+                    <option value="1">包材</option>
+                </select>
+            </div>
+            <input type="hidden" name="minSpecs" id="minSpecs"/>
+            <input type="text" name="name" id="name" placeholder="名称" autocomplete="off" class="layui-input">
+            <button class="layui-btn" lay-submit="" lay-filter="sreach"><i class="layui-icon">&#xe615;</i></button>
+        </form>
+    </div>
+
+    <table class="layui-table layui-form" id="goods" lay-filter="goods">
+
+    </table>
+
+</div>
+
+<script type="text/html" id="barDemo">
+    <a class="layui-btn layui-btn layui-btn-xs" lay-event="edit"><i class="layui-icon">&#xe642;</i>编辑</a>
+    <a class="layui-btn-danger layui-btn layui-btn-xs" lay-event="del"><i class="layui-icon">&#xe640;</i>删除</a>
+</script>
+
+<!--工具行按钮-->
+<script type="text/html" id="toolBar">
+    <div class="layui-btn-container">
+        <button class="layui-btn layui-btn-danger layui-btn-sm" onclick="delGoods()" id="batchDel"><i
+                class="layui-icon"></i>批量删除
+        </button>
+        <button class="layui-btn layui-btn-sm" onclick="x_admin_show('增加商品种类','goodsType-add.html',600,400)"><i
+                class="layui-icon"></i>添加
+        </button>
+    </div>
+</script>
+<!-- 显示当前图片 -->
+<script type="text/html" id="imgTpl">
+    <img onclick="openImg('{{d.img}}')" src="{{d.img}}" style="width: 28px;height: 28px;"/>
+</script>
+
+<script type="text/html" id="specsTpl">
+    {{d.specs + d.specsUnit}}
+</script>
+
+<script type="text/html" id="sendAmountTpl">
+    {{d.sendAmount + d.specsUnit}}
+</script>
+
+<script>
+
+    var parToChilData;
+
+    function openImg(url) {
+        layer.open({
+            type: 2,
+            title: "图片",
+            shadeClose: true,   //点击遮罩关闭 即单击iframe外区域关闭iframe
+            shade: 0.5,
+            area: ['500px', '500px'],
+            scrollbar: false,   //页面滚动条事件
+            content: url, //iframe的url
+            success: function (layero, index) {
+                layer.iframeAuto(index);
+            }
+        });
+    }
+
+    $(function () {
+        bindInputParam("type");
+        bindInputParam("name");
+        bindInputParam("minSpecs");
+    });
+
+    layui.use('table', function () {
+        var table = layui.table;
+
+        //table表格初始化
+        table.render({
+            elem: '#goods'
+            //,height: 312
+            , url: '/goods/goodInPage' //数据接口
+            , method: 'GET'
+            , page: true //开启分页
+            , toolbar: "#toolBar"
+            , cols: [[ //表头
+                {field: 'id', title: 'ID', type: 'checkbox', sort: true, fixed: 'left'}
+                , {field: 'name', title: '名称'}
+                , {field: 'img', title: '图片', templet: '#imgTpl'}
+                , {field: 'specs', title: '规格', templet: '#specsTpl'}
+                , {field: 'type', title: '类型'}
+                , {fixed: 'right', title: '操作', width: 180, align: 'center', toolbar: '#barDemo'}
+            ]]
+            , done: function (res, curr, count) {
+                $("[data-field='type']").children().each(function () {
+                    if ($(this).text() == '0') {
+                        $(this).text("商品")
+                    } else if ($(this).text() == '1') {
+                        $(this).text("包材")
+                    }
+                });
+            },
+            where: getTableWhere(["type", "name", "minSpecs"])
+        });
+
+
+        //监听工具条事件
+        table.on('tool(goods)', function (obj) { //注：tool是工具条事件名，goods是table原始容器的属性 lay-filter="对应的值"
+            var data = obj.data; //获得当前行数据
+            var layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+            var tr = obj.tr; //获得当前行 tr 的DOM对象
+            //删除事件
+            if (layEvent === 'del') {
+                confirmOperation(function (index) {
+                    var id = data.id;
+                    $.hoshi()
+                        .delete('/goods/delGoodsType/' + id)
+                        .onSuccess(function () {
+                            layer.msg("删除成功", {icon: 1, time: 1000}, function () {
+                                $('.layui-laypage-btn')[0].click();
+                            });
+
+                        }).linkStart();
+                })
+            } else if (layEvent === 'edit') {
+                //保存全局变量  用于向子页面传递数据
+                parToChilData = JSON.stringify(obj.data);
+                //弹出iframe层
+                layer.open({
+                    type: 2,
+                    title: '商品编辑',
+                    maxmin: true,
+                    shadeClose: true, //点击遮罩关闭层
+                    area: ['600px', '400px'],
+                    content: 'goodsType-edit.html',
+                });
+            }
+        });
+    });
+
+    /**
+     * 删除多个商品
+     */
+    function delGoods() {
+        //layui.table.checkStatus('goods').data    获取到所有被选中的复选框
+        //换成json格式字符串
+        var data = JSON.stringify(layui.table.checkStatus('goods').data);
+        //将json格式字符串转换成对象
+        var dataObject = JSON.parse(data);
+        //
+        if (dataObject.length === 0) {
+            layer.msg("请选中要删除的商品！", {icon: 7, time: 1500})
+        } else {
+            //ajax请求
+            confirmBatchOperation(function () {
+                $.hoshi()
+                    .delete('/goods/delBatchGoodsTypes')
+                    .jsonParam(data)
+                    .onSuccess(function (result) {
+                        parent.layui.layer.msg("删除成功！");
+                        //父页 当前页刷新
+                        reloadTable();
+
+
+                    })
+                    .onError(function () {
+                        layui.layer.msg("网络异常！请联系管理员", {icon: 2, time: 2000})
+                    })
+                    .linkStart($("#batchDel"));
+            })
+        }
+    }
+</script>
+
+</body>
+
+</html>
