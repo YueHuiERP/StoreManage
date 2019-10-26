@@ -32,10 +32,15 @@
         x_admin_show("选择库存类型", "../goods/chooseGoodsType.html", 900, 600, parent, null, null, function () {
 
             if (parent.Gid != null) {
-                let selectStock = stockList[selectIndex];
-                selectStock.gId = parent.Gid;
-                selectStock.name = parent.goodsName;
-                reloadStockTable();
+                if (selectIndex < 0) {
+                    $("#goodsName").val(parent.goodsName);
+                    $("#goodsId").val(parent.Gid);
+                } else {
+                    let selectStock = stockList[selectIndex];
+                    selectStock.gId = parent.Gid;
+                    selectStock.name = parent.goodsName;
+                    reloadStockTable();
+                }
             }
         });
         return false;
@@ -65,17 +70,20 @@
         <div class="layui-form-item">
             <label class="layui-form-label"> <span class="x-red">*</span>库存类型</label>
             <div class="layui-input-inline">
-                <input type="text" class="layui-input" id="goodName"  readonly="readonly" >
+                <input type="text" class="layui-input" id="goodsName" name="name" readonly="readonly"
+                       lay-verify="name|required"/>
+                <input type="hidden" class="layui-input" id="goodsId" name="gId" readonly="readonly" lay-verify="gId|required"/>
             </div>
-            <a class="layui-btn" onclick="addStocks()" style="margin-left: 15px"><i class="layui-icon"></i>选择库存类型</a>
+            <a class="layui-btn" onclick="chooseGoods(-1)" style="margin-left: 15px"><i
+                    class="layui-icon"></i>选择库存类型</a>
         </div>
         <div class="layui-form-item">
             <label for="amount" class="layui-form-label">
                 <span class="x-red">*</span>入库数量
             </label>
             <div class="layui-input-inline">
-                <input type="text" id="amount" name="amount" required="" lay-verify="amount"
-                       autocomplete="off" class="layui-input">
+                <input type="text" id="amount" name="amount" required="" lay-verify=""
+                       autocomplete="off" class="layui-input" readonly>
             </div>
         </div>
         <div class="layui-form-item">
@@ -83,7 +91,7 @@
                 <span class="x-red">*</span>入库误差
             </label>
             <div class="layui-input-inline">
-                <input type="text" id=" offsetAmount" name="offsetAmount" required="" lay-verify="amount"
+                <input type="text" id=" offsetAmount" name="offsetAmount" required="" lay-verify="amount|required"
                        autocomplete="off" class="layui-input" value="0">
             </div>
         </div>
@@ -92,8 +100,8 @@
                 <span class="x-red">*</span>价格
             </label>
             <div class="layui-input-inline">
-                <input type="text" id="price" name="price" required="" lay-verify="price"
-                       autocomplete="off" class="layui-input">
+                <input type="text" id="price" name="price" required="" lay-verify=""
+                       autocomplete="off" class="layui-input" readonly>
             </div>
         </div>
 
@@ -132,11 +140,14 @@
 </script>
 
 <script type="text/javascript">
+    //主库存记录
+    let parentStock = {};
+    //库存记录的附属列表
     let stockList = [];
     let tablns = null;
 
     let reg = /^(([1-9]+)|([0-9]+\.[0-9]{1,2}))$/;
-    let int = /^0|[0-9]*[1-9][0-9]*$/;
+    let int = /^(0|[1-9])[0-9]*$/;
 
     let options = {
         elem: "#stockList",
@@ -147,7 +158,6 @@
             , {field: 'LAY_TABLE_INDEX', title: '序号', width: 60, templet: '#indexTpl'}
             , {field: 'name', title: '名称', width: 150, templet: '#nameTpl'}
             , {field: 'amount', title: '入库数量', width: 80, edit: 'text'}
-            , {field: 'offsetAmount', title: '入库误差', width: 80, edit: 'text'}
             , {field: 'price', title: '价格', width: 80, edit: 'text'}
             , {field: 'provider', title: '供应商', width: 150, templet: '#providerTpl'}
             , {field: 'description', title: '描述', width: 200, edit: 'text'}
@@ -233,28 +243,34 @@
                 inputElem.blur();
                 obj.update(data);
                 tdElem.click();
+            }else {
+                syncParentStock() ;
             }
         })
     })
 
     layui.use(["jquery", "upload", "form", "layer", "element"], function () {
-        var $ = layui.$,
+        let $ = layui.$,
             form = layui.form;
 
+        form.verify(verify);
         //表单提交事件
         form.on('submit(add)', function (result) {
+            //获取主的库存对象
+            let stock = result.field;
+
             if (stockList.length <= 0) {
                 showToast("至少添加一条入库记录");
             } else {
                 let last = stockList[stockList.length - 1];
                 let err = judgeStock(last);
                 if (err != null) {//提交时判断输入的正确性
-                    showShake(err) ;
+                    showShake(err);
                 } else {
-                    let data = JSON.stringify(stockList);
+                    stock.children = stockList ;
                     $.hoshi()
-                        .post("/stock/add/all")
-                        .jsonParam(data)
+                        .post("/stock/add/suppliers")
+                        .jsonParam(stock)
                         .onSuccess(function (data, msg, code) {
                             showToast(msg, parent.layui);
                             //关闭当前frame页
@@ -267,6 +283,7 @@
         });
 
         form.on('submit(addStock)', function (result) {
+            let stock = result.field;
             let last;
             if (stockList.length > 0) {
                 last = stockList[stockList.length - 1];
@@ -277,8 +294,8 @@
                 }
             }
             let newStock = {
-                name: "",
-                gId: null,
+                name: stock.name,
+                gId: stock.gId,
                 amount: null,
                 offsetAmount: 0,
                 price: null,
@@ -317,6 +334,31 @@
             tbBody[0].scrollTop = top;
             tbBody[0].scrollLeft = left;
         }
+        syncParentStock() ;
+    }
+
+    /**
+     * 同步数量 价格
+     */
+    function syncParentStock() {
+        let totalAmount = 0;
+        let totalPrice = 0.0;
+        let size ;
+
+        if (stockList != null) {
+            stockList.forEach(stock => {
+                totalAmount += stock.amount == null ? 0 : parseInt(stock.amount) ;
+                totalPrice += stock.price == null ? 0 : parseFloat(stock.price) ;
+            });
+            size = stockList.length ;
+        }
+
+        if(size < 1){
+            size = 1 ;
+        }
+
+        $("#amount").val(totalAmount) ;
+        $("#price").val(totalPrice / size) ;
     }
 
     function deleteStock(tableIndex) {

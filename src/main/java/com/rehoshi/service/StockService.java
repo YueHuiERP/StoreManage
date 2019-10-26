@@ -40,4 +40,11 @@ public interface StockService extends IService<Stock>  {
      * @return
      */
     RespData<Boolean> batchSave(List<Stock> stockList);
+
+    /**
+     * 从不同的供应商处添加库存
+     * @param stock
+     * @return
+     */
+    RespData<Boolean> addFromSuppliers(Stock stock);
 }

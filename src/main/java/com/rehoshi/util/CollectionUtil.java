@@ -1,5 +1,9 @@
 package com.rehoshi.util;
 
+import com.baomidou.mybatisplus.extension.api.R;
+import com.rehoshi.model.Stock;
+import org.apache.poi.ss.formula.functions.T;
+
 import java.util.*;
 import java.util.function.Function;
 
@@ -65,5 +69,23 @@ public class CollectionUtil {
             }
         });
         return list;
+    }
+    public static int count(Collection collection) {
+        return collection == null ? 0 : collection.size();
+    }
+
+    public static <T>String concatString(Collection<T> collection, Function<T, String> mapper, String separator){
+        StringBuilder sb = new StringBuilder( );
+        foreach(collection, (data, index) -> {
+            if(index > 0){
+                sb.append(separator) ;
+            }
+            sb.append(mapper.apply(data)) ;
+        });
+        return sb.toString() ;
+    }
+
+    public static String concatString(T[] array, Function<T, String> mapper, String separator){
+        return concatString(Arrays.asList(array), mapper, separator) ;
     }
 }

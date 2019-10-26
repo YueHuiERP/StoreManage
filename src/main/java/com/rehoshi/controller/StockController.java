@@ -4,6 +4,7 @@ import com.rehoshi.dto.PageData;
 import com.rehoshi.dto.RespData;
 import com.rehoshi.dto.search.StockPageSearch;
 import com.rehoshi.model.Stock;
+import com.rehoshi.model.Supplier;
 import com.rehoshi.service.StockService;
 import com.rehoshi.util.DateUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,7 +73,6 @@ public class StockController {
      */
     @RequestMapping(value = "/addStock", method = RequestMethod.POST)
     public RespData<Boolean> addStock(@RequestBody Stock stock) {
-
         return stockService.addStock(stock);
     }
 
@@ -103,6 +103,16 @@ public class StockController {
     @PostMapping(value = "/add/all")
     public RespData<Boolean> batchAdd(@RequestBody List<Stock> stockList) {
         return stockService.batchSave(stockList);
+    }
+
+    /**
+     * 从不同的供应商添加库存
+     * @param stock
+     * @return
+     */
+    @PostMapping(value = "add/suppliers")
+    public RespData<Boolean> addFromSuppliers(@RequestBody Stock stock){
+        return stockService.addFromSuppliers(stock);
     }
 
 }

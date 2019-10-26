@@ -1,5 +1,6 @@
 package com.rehoshi.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -15,10 +16,7 @@ import com.rehoshi.model.Goods;
 import com.rehoshi.model.Stock;
 import com.rehoshi.model.Supplier;
 import com.rehoshi.service.StockService;
-import com.rehoshi.util.CollectionUtil;
-import com.rehoshi.util.ContextUtil;
-import com.rehoshi.util.DateUtil;
-import com.rehoshi.util.PYUtil;
+import com.rehoshi.util.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,6 +60,11 @@ public class StockServiceImpl extends ServiceImpl<StockMapper, Stock> implements
         CollectionUtil.foreach(stocks, data -> {
             data.setProductAmount(statisticsMapper.getStockProductAmount(data.getId()));
             data.setWasteAmount(statisticsMapper.getStockWasteAmount(data.getId()));
+            if (data.getSupplierId() == null) {
+                List<Stock> children = stockMapper.selectByMap(MapUtil.byPair("parentId", data.getId()));
+                String provider = CollectionUtil.concatString(children, Stock::getProvider, ",");
+                data.setProvider(provider);
+            }
         });
         PageInfo<Stock> stockPageInfo = new PageInfo<>(stocks);
         return new PageData<>(stockPageInfo);
@@ -75,10 +78,12 @@ public class StockServiceImpl extends ServiceImpl<StockMapper, Stock> implements
      */
     @Override
     public RespData<Boolean> deleteById(String id) {
-        int result = stockMapper.delByID(id);
+        int result = stockMapper.deleteById(id);
         if (result == 0) {
             return RespData.fail(false).setCode(0);
         } else {
+            //删除children
+            stockMapper.deleteByMap(MapUtil.byPair("parentId", id));
             return RespData.success(true).setCode(200);
         }
     }
@@ -111,28 +116,28 @@ public class StockServiceImpl extends ServiceImpl<StockMapper, Stock> implements
         }
     }
 
-    private int getLastBatchNum(){
+    private int getLastBatchNum() {
         int num = stockMapper.todayCount();
-        if(num > 0){//如果今天有插入过得库存
+        if (num > 0) {//如果今天有插入过得库存
             Stock last = stockMapper.getLast();
             String batch = last.getBatch();
-            int length = batch.length() ;
+            int length = batch.length();
             String numStr = batch.substring(length - 3, length);
             //获取最后插入的序号
-            num = Integer.parseInt(numStr) ;
+            num = Integer.parseInt(numStr);
         }
-        return num ;
+        return num;
     }
 
-    private String getBatch(Stock stock){
-        return getBatch(stock,getLastBatchNum()) ;
+    private String getBatch(Stock stock) {
+        return getBatch(stock, getLastBatchNum());
     }
 
-    private String getBatch(Stock stock, int lastBatchNum){
+    private String getBatch(Stock stock, int lastBatchNum) {
         //自动生成批次 首字母大写+日期+序号
         String batch = String.format(Locale.CHINA, "%s%s%03d", PYUtil.getPinYinHeadChar(stock.getName()),
                 DateUtil.formatDate("yyyyMMdd", new Date()), lastBatchNum + 1);
-        return batch ;
+        return batch;
     }
 
     /**
@@ -164,15 +169,19 @@ public class StockServiceImpl extends ServiceImpl<StockMapper, Stock> implements
      */
     public RespData<Boolean> delBatchStock(List<Stock> stockList) {
 
-        int result = stockMapper.delBatchStock(stockList);
+        List<String> ids = CollectionUtil.map(stockList, Stock::getId);
+        int result = stockMapper.deleteBatchIds(ids);
         if (result == stockList.size()) {
-            return RespData.success(true).setCode(200).setMsg("删除成功");
 
+            //根据父id批量删除
+            UpdateWrapper<Stock> wrapper = new UpdateWrapper<>();
+            wrapper.in("parentId", ids);
+            stockMapper.delete(wrapper);
+
+            return RespData.success(true).setCode(200).setMsg("删除成功");
         } else {
             return RespData.fail(false).setCode(0).setMsg("删除失败");
         }
-
-
     }
 
     /**
@@ -203,21 +212,50 @@ public class StockServiceImpl extends ServiceImpl<StockMapper, Stock> implements
 
     @Override
     public RespData<Boolean> batchSave(List<Stock> stockList) {
-        RespData<Boolean> respData = RespData.fail(false).setMsg("批量入库失败") ;
-        int num = getLastBatchNum() ;
+        RespData<Boolean> respData = RespData.fail(false).setMsg("批量入库失败");
+        int num = getLastBatchNum();
         long timeMillis = System.currentTimeMillis();
         CollectionUtil.foreach(stockList, (data, index) -> {
             //每个修改时间间隔1毫秒
             data.setCreateTime(new Date(timeMillis + index * 1));
             data.newId();
             assembleStock(data);
-            data.setBatch(getBatch(data,num + index));
+            data.setBatch(getBatch(data, num + index));
         });
 //        int i = stockMapper.(stockList);
         boolean success = saveBatch(stockList);
-        if(success){
-            respData.success().setData(true).setMsg("批量入库成功") ;
+        if (success) {
+            respData.success().setData(true).setMsg("批量入库成功");
         }
+        return respData;
+    }
+
+    @Override
+    public RespData<Boolean> addFromSuppliers(Stock stock) {
+        RespData<Boolean> respData = RespData.fail(false).setMsg("批量入失败");
+        String batch = getBatch(stock);
+        stock.setBatch(batch);
+        //设置冗余的字段
+        assembleStock(stock);
+        //设置时间用于排序
+        stock.setCreateTime(new Date());
+
+        boolean success = save(stock);
+        if (success) {
+            long timeMillis = System.currentTimeMillis();
+            CollectionUtil.foreach(stock.getChildren(), (data, index) -> {
+                //子商品
+                data.setBatch(batch);
+                //设置时间用于排序
+                data.setCreateTime(new Date(timeMillis + (index + 1)));
+                data.setParentId(stock.getId());
+                assembleStock(data);
+            });
+            if (saveBatch(stock.getChildren())) {
+                respData.success().setMsg("批量插入成功");
+            }
+        }
+
         return respData;
     }
 }

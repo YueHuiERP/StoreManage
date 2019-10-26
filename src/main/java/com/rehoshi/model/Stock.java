@@ -22,7 +22,9 @@ public class Stock extends BaseModel {
 //    private String img ;
     //货品种类
     private String gId;
+
     //商品
+    @TableField(exist = false)
     private Goods goods;
     //货品规格
     //private Double specs;
@@ -145,5 +147,9 @@ public class Stock extends BaseModel {
             children = new ArrayList<>( );
         }
         return children;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

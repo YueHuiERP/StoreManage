@@ -23,36 +23,12 @@ public interface StockMapper extends BaseMapper<Stock> {
     })
     Stock getById(@Param("id") String id);
 
-    @Delete("DELETE FROM `stock` WHERE id = #{id}")
-    int delByID(@Param("id") String id);
-
-    @Insert({"INSERT INTO `stock` ",
-            "(id, name, gId, amount, price, batch, provider, description, createTime, offsetAmount, specsValue, supplierId, creatorId, parentId)",
-            "VALUES (#{id},#{name},#{gId},#{amount},#{price},#{batch},#{provider},#{description},#{createTime}, #{offsetAmount}, #{specsValue}, #{supplierId}, #{creatorId}, #{parentId})"})
-    int addStock(Stock stock);
-
-
-    /**
-     * 批量删除
-     *
-     * @param stockList
-     * @return
-     */
-    @Delete({
-            "<script>"
-                    + "DELETE FROM `stock`  WHERE id in "
-                    + "<foreach item='item' index='index' collection='stockList' open='(' separator=',' close=')'>"
-                    + "#{item.id}"
-                    + "</foreach>"
-                    + "</script>"
-    })
-    int delBatchStock(@Param("stockList") List<Stock> stockList);
-
     @Select({"<script>",
             "SELECT oriStock.*, ss.stockId, ss.remainAmount",
             "FROM (SELECT s.id stockId, ROUND((IFNULL(amount * IFNULL(specsValue,1.00),0.00)  - IFNULL((SELECT SUM(amount * pAmount * specsValue) FROM productcops WHERE sId = s.id),0.00) - IFNULL((SELECT SUM(weight) FROM waste WHERE sId = s.id),0.00)), 2) remainAmount FROM stock s) ss",
             "LEFT JOIN stock oriStock ON ss.stockId = oriStock.id",
             "WHERE oriStock.name LIKE #{name}",
+            "AND parentId IS NULL",
             "<if test=\"minRemain != null\">",
             "AND ss.remainAmount > #{minRemain}",
             "</if>",
