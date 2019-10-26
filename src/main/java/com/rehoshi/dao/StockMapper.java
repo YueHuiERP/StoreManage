@@ -91,12 +91,4 @@ public interface StockMapper extends BaseMapper<Stock> {
             "ORDER BY createTime DESC LIMIT 0, 1"
     })
     Stock getLast();
-
-    @Insert({"<script>",
-            "INSERT INTO `stock`(id, name, gId, amount, price, batch, provider, description, createTime, offsetAmount, specsValue, supplierId, creatorId, parentId) VALUES ",
-            "<foreach collection='stockList' item='item' index='index' separator=','>",
-            "(#{item.id},#{item.name},#{item.gId},#{item.amount},#{item.price},#{item.batch},#{item.provider},#{item.description},#{item.createTime}, #{item.offsetAmount}, #{item.specsValue}, #{item.supplierId}, #{item.creatorId}, #{parentId})",
-            "</foreach>",
-            "</script>"})
-    int batchSave(@Param("stockList") List<Stock> stockList);
 }
