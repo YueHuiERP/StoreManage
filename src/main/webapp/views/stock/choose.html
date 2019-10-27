@@ -63,12 +63,18 @@
     <a class="layui-btn layui-btn-xs" lay-event="chooseStock">选择</a>
 </script>
 <!-- 图片 -->
+<!--    <a href="" onclick="x_admin_show('图片显示','{{ d.goods.img }}',600,400,parent)">点击查看</a>-->
 <script type="text/html" id="imgTpl">
-    <a href="" onclick="x_admin_show('图片显示','{{ d.goods.img }}',600,400,parent)">点击查看</a>
+    <img onclick="x_admin_show('图片显示','{{ d.goods.img }}',600,400,parent)" src="{{d.goods.img}}"
+         style="width: 28px;height: 28px;"/>
 </script>
 
 <script type="text/html" id="specsTpl">
     {{d.goods.specs + d.goods.specsUnit}}
+</script>
+
+<script type="text/html" id="creatorTpl">
+    {{d.creator == null ? "" : d.creator.name}}
 </script>
 
 <!--<script type="text/html" id="remainAmountTpl">-->
@@ -86,7 +92,7 @@
         bindInputParam("endTime");
         bindInputParam("name");
         bindInputParam("minRemain");
-        bindInputParam("goodsType") ;
+        bindInputParam("goodsType");
     });
 
     layui.use('laydate', function () {
@@ -120,17 +126,19 @@
             , url: '/stock/stockInPage' //数据接口
             , page: true //开启分页
             , cols: [[ //表头
-                {field: 'name', title: '名称'}
+                {field: 'batch', title: '批次', width: 180}
+                , {field: 'name', title: '名称', width: 150}
                 , {field: 'img', title: '图片', templet: '#imgTpl'}
-                , {field: 'specs', title: '规格', templet: "#specsTpl"}
-                , {field: 'amount', title: '入库数量'}
-                , {field: 'offsetAmount', title: '入库误差'}
+                , {field: 'amount', title: '入库数量', width: 80}
+                , {field: 'offsetAmount', title: '入库误差', width: 80}
+                , {field: 'wasteAmount', title: '累计损耗', width: 80}
                 , {field: 'id', title: '剩余', templet: "#remainAmountTpl"}
-                , {field: 'price', title: '价格'}
-                , {field: 'batch', title: '批次'}
-                , {field: 'provider', title: '供应商'}
-                , {field: 'description', title: '描述'}
-                , {field: 'createTimeStr', title: '入库时间'}
+                , {field: 'price', title: '入库价格', width: 80}
+                , {field: 'productPrice', title: '成品价格', width: 80}
+                , {field: 'creatorId', title: '登记人员', templet: "#creatorTpl", width: 80}
+                , {field: 'provider', title: '供应商', width: 150}
+                , {field: 'createTimeStr', title: '入库时间', width: 180}
+                , {field: 'description', title: '描述', width: 200}
                 , {fixed: 'right', title: '操作', width: 80, align: 'center', toolbar: "#operateTpl"}
             ]],
             where: getChooseWhere()//生产选择库存不选择库存为0的

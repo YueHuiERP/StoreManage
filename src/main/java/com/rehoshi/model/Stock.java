@@ -67,6 +67,9 @@ public class Stock extends BaseModel {
     //冗余的规格值
     private Double specsValue;
 
+    @TableField(exist = false)
+    private Double productPrice ;
+
     /**
      * 父库存 有库存来自于不同供应商的需求
      */
@@ -120,6 +123,13 @@ public class Stock extends BaseModel {
         this.gId = gId;
     }
 
+    public Double getPrice() {
+        if(price == null){
+            price = 0d ;
+        }
+        return price;
+    }
+
     public Double getOffsetAmount() {
         if (offsetAmount == null) {
             offsetAmount = 0d;
@@ -151,5 +161,12 @@ public class Stock extends BaseModel {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+//    入库数量*单价/(入库数量-损耗-误差)
+    public Double getProductPrice() {
+        double stockSum = getPrice() * getAmount();
+        double realAmount = getAmount() - getWasteAmount() + getOffsetAmount();
+        return realAmount == 0 ? 0 : (stockSum / realAmount);
     }
 }
