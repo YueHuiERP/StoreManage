@@ -1,12 +1,13 @@
 package com.rehoshi.dao;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.rehoshi.dto.search.ProductPageSearch;
 import com.rehoshi.model.Product;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
 
-public interface ProductMapper {
+public interface ProductMapper extends BaseMapper<Product> {
 
     /**
      * 根据查询条件查询

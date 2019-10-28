@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -34,6 +35,7 @@ public class ExcelExportController extends BaseExcelController {
     @Autowired
     private ProductService productService;
 
+
     @Autowired
     private ManifestService manifestService;
 
@@ -52,6 +54,7 @@ public class ExcelExportController extends BaseExcelController {
         search.setName(name);
         search.setStartTime(startTime);
         search.setEndTime(endTime);
+        search.setStockType(Stock.Type.CHILD);
         RespData<List<Stock>> listRespData = stockService.list(search);
         export(StockRow.class, CollectionUtil.map(listRespData.data, StockRow::new), "库存");
     }
@@ -87,6 +90,58 @@ public class ExcelExportController extends BaseExcelController {
         export(table, "生产-生产");
     }
 
+    @GetMapping("finance")
+    public void finance(@RequestParam(value = "startTime", required = false) String startTimeStr,
+                        @RequestParam(value = "endTime", required = false) String endTimeStr) {
+        Date startDate = DateUtil.toDate(startTimeStr);
+
+        Date endDate = DateUtil.toDate(endTimeStr);
+
+        if (endDate != null) {
+            endDate = DateUtil.endOfDay(endDate);
+        }
+        StockPageSearch search = new StockPageSearch();
+        search.setStartTime(startDate);
+        search.setEndTime(endDate);
+        search.setGoodsType(Goods.Type.GOODS);
+        RespData<List<Stock>> list = stockService.list(search);
+        List<FinanceRow> rowList = new ArrayList<>();
+        List<ExcelMergeInfo> mergeInfos = new ArrayList<>();
+        CollectionUtil.foreach(list.data, data -> {
+            //查找到对应的子库存
+            RespData<List<Stock>> children = stockService.getByParentId(data.getId());
+            //查找使用该库存生产的产品
+            RespData<List<Product>> productList = productService.getByStockId(data.getId());
+            if (children.data == null) {
+                children.data = new ArrayList<>();
+            }
+            if (productList.data == null) {
+                productList.data = new ArrayList<>();
+            }
+
+            int startRow = rowList.size() + 1;
+            //对齐两个列表长度  补null
+            CollectionUtil.alignCount(children.data, productList.data, index -> null, index -> null);
+            //创建导出Excel对象
+            CollectionUtil.foreach(children.data, productList.data, (stock, product) -> {
+                rowList.add(new FinanceRow(stock, product));
+            });
+            //计算合并信息
+            int endRow = rowList.size();
+            if (endRow - startRow > 0) {
+                for (int i = 6; i < 9; i++) {
+                    ExcelMergeInfo mergeInfo = new ExcelMergeInfo();
+                    mergeInfo.setStartCol(i);
+                    mergeInfo.setEndCol(i);
+                    mergeInfo.setStartRow(startRow);
+                    mergeInfo.setEndRow(endRow);
+                    mergeInfos.add(mergeInfo);
+                }
+            }
+        });
+        export(FinanceRow.class, rowList, "财务-成本统计", mergeInfos);
+    }
+
 
     @GetMapping("order")
     public void orderList(@RequestParam(value = "startTime", required = false) String startTime,
@@ -111,6 +166,7 @@ public class ExcelExportController extends BaseExcelController {
             statusStr = "待发货";
             List<PrepareOrderRow> prepareOrderRows = new ArrayList<>();
             List<ExcelMergeInfo> mergeInfos = ExcelMergeHelper.merge(3, listRespData.data, prepareOrderRows, new ExcelMergeHelper.Adapter<Order, ProductComposition, PrepareOrderRow>() {
+
                 @Override
                 public List<ProductComposition> adapt(Order model) {
                     return model.getItems();

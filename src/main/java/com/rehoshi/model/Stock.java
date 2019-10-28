@@ -6,6 +6,8 @@ import com.rehoshi.util.DateUtil;
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
 
+import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -16,6 +18,12 @@ import java.util.List;
 @Data
 @TableName("stock")
 public class Stock extends BaseModel {
+
+    public interface Type{
+        int PARENT = 0 ;
+        int CHILD = 1 ;
+    }
+
     //货品名称
     private String name;
     //货品图片
@@ -37,7 +45,7 @@ public class Stock extends BaseModel {
     //货品批次 使用当前时间字符串 精确到分钟  yyyy-MM-dd HH:mm
     private String batch;
     //供应商id
-    private String supplierId ;
+    private String supplierId;
     //供应商 缓存的名称
     private String provider;
     //描述
@@ -68,17 +76,18 @@ public class Stock extends BaseModel {
     private Double specsValue;
 
     @TableField(exist = false)
-    private Double productPrice ;
+    private Double productPrice;
 
     /**
      * 父库存 有库存来自于不同供应商的需求
      */
-    private String parentId ;
+    private String parentId;
     @TableField(exist = false)
     private Stock parent;
     //子库存
     @TableField(exist = false)
-    private List<Stock> children ;
+    private List<Stock> children;
+
     public Integer getAmount() {
         if (amount == null) {
             amount = 0;
@@ -124,8 +133,8 @@ public class Stock extends BaseModel {
     }
 
     public Double getPrice() {
-        if(price == null){
-            price = 0d ;
+        if (price == null) {
+            price = 0d;
         }
         return price;
     }
@@ -153,8 +162,8 @@ public class Stock extends BaseModel {
     }
 
     public List<Stock> getChildren() {
-        if(children == null){
-            children = new ArrayList<>( );
+        if (children == null) {
+            children = new ArrayList<>();
         }
         return children;
     }
@@ -163,10 +172,17 @@ public class Stock extends BaseModel {
         this.name = name;
     }
 
-//    入库数量*单价/(入库数量-损耗-误差)
+    //    入库数量*单价/(入库数量-损耗-误差)
     public Double getProductPrice() {
         double stockSum = getPrice() * getAmount();
         double realAmount = getAmount() - getWasteAmount() + getOffsetAmount();
-        return realAmount == 0 ? 0 : (stockSum / realAmount);
+        BigDecimal b = new BigDecimal(realAmount == 0 ? 0 : (stockSum / realAmount));
+        return b.setScale(2,   BigDecimal.ROUND_HALF_UP).doubleValue();
+    }
+
+    public Double getUnitPrice() {
+        Integer amount = getAmount();
+        BigDecimal decimal = new BigDecimal(amount == 0 ? 0 : (getPrice() / amount));
+        return decimal.setScale(2,   BigDecimal.ROUND_HALF_UP).doubleValue();
     }
 }

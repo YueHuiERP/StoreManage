@@ -1,5 +1,6 @@
 package com.rehoshi.dto.search;
 
+import com.rehoshi.model.Stock;
 import lombok.Data;
 
 import java.util.Date;
@@ -21,6 +22,8 @@ public class StockPageSearch {
     private Double minRemain ;
 
     private Integer goodsType ;
+
+    private Integer stockType = Stock.Type.PARENT;
 
     public String getName() {
         if (name==null){

@@ -9,7 +9,7 @@ import lombok.Data;
 @Data
 public class Goods extends BaseModel {
 
-    interface Type {
+    public interface Type {
         int GOODS = 0;
         int MATERIAL = 1;
         int PACKAGE_MATERIAL = 2;

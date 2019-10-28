@@ -21,9 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 @Service
 @Transactional
@@ -257,5 +255,10 @@ public class StockServiceImpl extends ServiceImpl<StockMapper, Stock> implements
         }
 
         return respData;
+    }
+
+    @Override
+    public RespData<List<Stock>> getByParentId(String id) {
+        return RespData.success(baseMapper.selectByMap(MapUtil.byPair("parentId", id))).setMsg("查询成功");
     }
 }

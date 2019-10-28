@@ -1,16 +1,21 @@
 package com.rehoshi.model;
 
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.rehoshi.util.CollectionUtil;
 import lombok.Data;
 
 /**
  * 产品组成原料
  */
 @Data
+@TableName("productcops")
 public class ProductComposition extends BaseModel {
     //成分id
     private String id;
     //原品id
     private String sId;
+    @TableField(exist = false)
     private Stock stock;
     //原品数量
     private Integer amount;
@@ -20,6 +25,7 @@ public class ProductComposition extends BaseModel {
     //产品id
     private String pId;
 
+    @TableField(exist = false)
     private Product product;
 
     //冗余成品数量
@@ -34,13 +40,16 @@ public class ProductComposition extends BaseModel {
 
     //待发货订单所需要的商品
     private String gId;
+    @TableField(exist = false)
     private Goods goods;
 
     //所属订单
     private String oId;
+    @TableField(exist = false)
     private Order order;
 
     //订单发货量
+    @TableField(exist = false)
     private Double sendAmount ;
 
 
@@ -133,5 +142,13 @@ public class ProductComposition extends BaseModel {
             }
         }
         return isMain ;
+    }
+
+    public Boolean isPackage(){
+        return !isMain() ;
+    }
+
+    public Double getCost(){
+        return getStock() == null ? 0 : (getStock().getProductPrice() * getAmount() );
     }
 }

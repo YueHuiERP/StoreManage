@@ -1,5 +1,6 @@
 package com.rehoshi.service;
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.rehoshi.dto.PageData;
 import com.rehoshi.dto.RespData;
 import com.rehoshi.dto.search.ProductPageSearch;
@@ -10,7 +11,7 @@ import java.util.List;
 /**
  * 产品业务
  */
-public interface ProductService {
+public interface ProductService extends IService<Product> {
 
     /**
      * 打包产品
@@ -60,4 +61,6 @@ public interface ProductService {
     RespData<Boolean> deleteInIds(List<String> ids);
 
     RespData<List<Product>> list(ProductPageSearch search);
+
+    RespData<List<Product>> getByStockId(String stockId) ;
 }

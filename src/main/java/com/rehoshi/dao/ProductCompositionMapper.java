@@ -1,11 +1,12 @@
 package com.rehoshi.dao;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.rehoshi.model.ProductComposition;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
 
-public interface ProductCompositionMapper {
+public interface ProductCompositionMapper extends BaseMapper<ProductComposition> {
 
 
     @Select("SELECT * FROM productcops WHERE pId = #{id}")

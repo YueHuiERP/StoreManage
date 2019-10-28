@@ -1,5 +1,6 @@
 package com.rehoshi.service.impl;
 
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
 import com.rehoshi.dao.ProductCompositionMapper;
 import com.rehoshi.dao.ProductMapper;
@@ -12,6 +13,7 @@ import com.rehoshi.model.ProductComposition;
 import com.rehoshi.service.ProductService;
 import com.rehoshi.util.CollectionUtil;
 import com.rehoshi.util.DateUtil;
+import com.rehoshi.util.MapUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,7 +23,7 @@ import java.util.List;
 
 @Service
 @Transactional
-public class ProductServiceImpl implements ProductService {
+public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> implements ProductService {
 
     @Resource
     private ProductMapper productMapper;
@@ -143,6 +145,18 @@ public class ProductServiceImpl implements ProductService {
             data.setSendAmount(statisticsMapper.getProductSendAmount(data.getId()));
         });
         return RespData.success(bySearch);
+    }
+
+    @Override
+    public RespData<List<Product>> getByStockId(String stockId) {
+        //查找到所有的原料
+        List<ProductComposition> cops = productCompositionMapper.selectByMap(MapUtil.byPair("sId", stockId));
+        //查找到所有产品
+        List<Product> products = baseMapper.selectBatchIds(CollectionUtil.map(cops, ProductComposition::getpId));
+        CollectionUtil.foreach(products, data -> {
+            data.setCompositions(productCompositionMapper.getByProductId(data.getId()));
+        });
+        return RespData.success(products).setMsg("查询成功");
     }
 
     public static void newCompositionsId(Product product) {

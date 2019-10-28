@@ -47,4 +47,9 @@ public interface StockService extends IService<Stock>  {
      * @return
      */
     RespData<Boolean> addFromSuppliers(Stock stock);
+
+    /**
+     * 根据父id查找所有的库存
+     */
+    RespData<List<Stock>> getByParentId(String id);
 }
