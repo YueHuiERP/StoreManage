@@ -11,11 +11,13 @@ import com.rehoshi.service.*;
 import com.rehoshi.util.CollectionUtil;
 import com.rehoshi.util.DateUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -110,6 +112,9 @@ public class ExcelExportController extends BaseExcelController {
         CollectionUtil.foreach(list.data, data -> {
             //查找到对应的子库存
             RespData<List<Stock>> children = stockService.getByParentId(data.getId());
+            CollectionUtil.foreach(children.data, stock->{
+                stock.setParent(data);
+            });
             //查找使用该库存生产的产品
             RespData<List<Product>> productList = productService.getByStockId(data.getId());
             if (children.data == null) {

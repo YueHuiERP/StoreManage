@@ -259,6 +259,7 @@ public class StockServiceImpl extends ServiceImpl<StockMapper, Stock> implements
 
     @Override
     public RespData<List<Stock>> getByParentId(String id) {
-        return RespData.success(baseMapper.selectByMap(MapUtil.byPair("parentId", id))).setMsg("查询成功");
+        List<Stock> byParentId = baseMapper.selectByMap(MapUtil.byPair("parentId", id));
+        return RespData.success(byParentId).setMsg("查询成功");
     }
 }

@@ -32,7 +32,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
     private ProductCompositionMapper productCompositionMapper;
 
     @Resource
-    private StatisticsMapper statisticsMapper ;
+    private StatisticsMapper statisticsMapper;
 
     @Override
     public RespData<String> packing(Product product) {
@@ -66,7 +66,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
     public PageData<Product> productInPage(ProductPageSearch search, int pageIndex, int pageSize) {
         PageHelper.startPage(pageIndex, pageSize);
         List<Product> bySearch = productMapper.getBySearch(search);
-        CollectionUtil.foreach(bySearch,data -> {
+        CollectionUtil.foreach(bySearch, data -> {
             data.setSendAmount(statisticsMapper.getProductSendAmount(data.getId()));
         });
         return new PageData<>(bySearch);
@@ -141,7 +141,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         CollectionUtil.foreach(bySearch, data -> {
             data.setCompositions(productCompositionMapper.getByProductId(data.getId()));
         });
-        CollectionUtil.foreach(bySearch,data -> {
+        CollectionUtil.foreach(bySearch, data -> {
             data.setSendAmount(statisticsMapper.getProductSendAmount(data.getId()));
         });
         return RespData.success(bySearch);
@@ -151,12 +151,16 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
     public RespData<List<Product>> getByStockId(String stockId) {
         //查找到所有的原料
         List<ProductComposition> cops = productCompositionMapper.selectByMap(MapUtil.byPair("sId", stockId));
-        //查找到所有产品
-        List<Product> products = baseMapper.selectBatchIds(CollectionUtil.map(cops, ProductComposition::getpId));
-        CollectionUtil.foreach(products, data -> {
-            data.setCompositions(productCompositionMapper.getByProductId(data.getId()));
-        });
-        return RespData.success(products).setMsg("查询成功");
+        if (!CollectionUtil.isNullOrEmpty(cops)) {
+            //查找到所有产品
+            List<Product> products = baseMapper.selectBatchIds(CollectionUtil.map(cops, ProductComposition::getpId));
+            CollectionUtil.foreach(products, data -> {
+                data.setCompositions(productCompositionMapper.getByProductId(data.getId()));
+            });
+            return RespData.success(products).setMsg("查询成功");
+        }else {
+            return new RespData<List<Product>>().fail().setMsg("查询失败") ;
+        }
     }
 
     public static void newCompositionsId(Product product) {
