@@ -68,6 +68,8 @@ public class Stock extends BaseModel {
 
     @TableField(exist = false)
     private String createTimeStr;
+    @TableField(exist = false)
+    private String createTimeInList;
 
     //剩余数量
     @TableField(exist = false)
@@ -98,6 +100,7 @@ public class Stock extends BaseModel {
     public void setCreateTime(Date createTime) {
         this.createTime = createTime;
         setCreateTimeStr(DateUtil.formatDate("yyyy-MM-dd HH:mm:ss", createTime));
+        setCreateTimeInList(DateUtil.formatDate(createTime));
     }
 
 

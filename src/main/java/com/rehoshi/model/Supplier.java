@@ -14,9 +14,11 @@ public class Supplier extends BaseModel {
     private String description ;
     private Date createTime ;
     private String createTimeStr ;
+    private String createTimeInList ;
 
     public void setCreateTime(Date createTime) {
         this.createTime = createTime;
         setCreateTimeStr(DateUtil.formatDateTime(createTime));
+        setCreateTimeInList(DateUtil.formatDate(createTime));
     }
 }

@@ -80,6 +80,11 @@ public class GoodsServiceImpl implements GoodsService {
         PageHelper.startPage(pageIndex, pageSize);
         //startPage后面紧跟的查询就是分页查询
         List<Goods> goods = goodsMapper.queryGoodsBySearch(search);
+        if(search.getWithSendAmount()){
+            CollectionUtil.foreach(goods, data -> {
+                data.setSendAmount(getGoodsSendAmount(data));
+            });
+        }
         PageInfo<Goods> goodsPageInfo = new PageInfo<>(goods);
         return new PageData<>(goodsPageInfo);
     }

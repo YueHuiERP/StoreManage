@@ -15,6 +15,7 @@ public class GoodPageSearch extends PageSearch{
 
     private Integer minSpecs;
 
+    private Boolean withSendAmount = false ;
 
     public String getName() {
         if (name==null){
@@ -28,5 +29,12 @@ public class GoodPageSearch extends PageSearch{
             minSpecs = Integer.MIN_VALUE ;
         }
         return minSpecs;
+    }
+
+    public Boolean getWithSendAmount() {
+        if(withSendAmount == null){
+            withSendAmount = false ;
+        }
+        return withSendAmount;
     }
 }

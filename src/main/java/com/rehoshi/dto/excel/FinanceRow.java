@@ -34,7 +34,7 @@ public class FinanceRow extends ExcelRow<Stock> {
     private Double productUnitPrice;
 
     @ExcelProperty(value = "生产时间", index = 10)
-    private Date productTime;
+    private String productTime;
     @ExcelProperty(value = "成品名称", index = 11)
     private String productName;
     @ExcelProperty(value = "成品斤数", index = 12)
@@ -78,7 +78,7 @@ public class FinanceRow extends ExcelRow<Stock> {
         }
 
         if (product != null) {
-            this.setProductTime(product.getCreateTime());
+            this.setProductTime(product.getCreateTimeInList());
             this.setProductName(product.getName());
             this.setProductSpecs(product.getSpecsValue());
             this.setProductAmount(product.getAmount());

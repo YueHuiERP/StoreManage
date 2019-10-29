@@ -54,13 +54,12 @@ public class GoodsController {
             , @RequestParam(value = "page") int page
             , @RequestParam(value = "limit") int limit
             ,@RequestParam(value = "minSpecs", required = false) Integer minSpecs
-            ,@RequestParam(value = "goodsType", required = false) Integer goodsType) {
-
-
+            ,@RequestParam(value = "withSendAmount", required = false) Boolean withSendAmount) {
         GoodPageSearch goodPageSearch = new GoodPageSearch();
         goodPageSearch.setName(name);
         goodPageSearch.setType(type);
         goodPageSearch.setMinSpecs(minSpecs);
+        goodPageSearch.setWithSendAmount(withSendAmount);
         return goodsService.goodsInPage(goodPageSearch, page, limit);
     }
 

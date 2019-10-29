@@ -35,6 +35,8 @@ public class Product extends BaseModel {
     private String createTimeStr;
     @TableField(exist = false)
     private String createTimeLabel;
+    @TableField(exist = false)
+    private String createTimeInList;
 
     private Double specs;
 
@@ -84,6 +86,7 @@ public class Product extends BaseModel {
         this.createTime = createTime;
         setCreateTimeStr(DateUtil.formatDateTime(createTime));
         setCreateTimeLabel(DateUtil.formatDate("yyyy-MM-dd HH:mm", createTime));
+        setCreateTimeInList(DateUtil.formatDate(this.createTime));
     }
 
     public String getCreateTimeStr() {

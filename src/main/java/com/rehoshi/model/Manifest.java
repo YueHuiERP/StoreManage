@@ -54,7 +54,10 @@ public class Manifest extends BaseModel {
     //创建时间
     @DateTimeFormat(pattern = DateUtil.DATETIME_FORMAT)
     private Date createTime;
+    //时期格式字符串
     private String createTimeStr;
+    //用于列表显示的标签
+    private String createTimeInList;
 
     //订单发货量
     private Double sendAmount;
@@ -66,6 +69,7 @@ public class Manifest extends BaseModel {
     public void setCreateTime(Date createTime) {
         this.createTime = createTime;
         setCreateTimeStr(DateUtil.formatDateTime(this.createTime));
+        setCreateTimeInList(DateUtil.formatDate(this.createTime));
     }
 
     public String getStatusStr() {

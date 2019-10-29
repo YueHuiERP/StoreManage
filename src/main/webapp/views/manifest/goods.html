@@ -49,7 +49,8 @@
                     <option value="0" selected="selected">商品</option>
                 </select>
             </div>
-
+            <input type="hidden" name="minSpecs" id="minSpecs" value="1"/>
+            <input type="hidden" id="withSendAmount" name="withSendAmount" value="true"/>
             <input type="text" name="name" id="name" placeholder="名称" autocomplete="off" class="layui-input">
             <button class="layui-btn" lay-submit="" lay-filter="sreach"><i class="layui-icon">&#xe615;</i></button>
         </form>
@@ -130,7 +131,7 @@
                     }
                 });
             },
-            where: getTableWhere(["type", "name"])
+            where: getTableWhere(["type", "name", "withSendAmount", "minSpecs"])
         });
     });
 
