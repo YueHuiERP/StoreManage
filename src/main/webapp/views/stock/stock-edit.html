@@ -79,7 +79,6 @@
             <div class="layui-input-inline">
                 <input type="text" class="layui-input" id="goodName" readonly="readonly">
             </div>
-            <a class="layui-btn" onclick="addStocks()" style="margin-left: 15px"><i class="layui-icon"></i>选择库存类型</a>
         </div>
 
         <!-- 隐藏域  随表单一起提交 -->
@@ -93,7 +92,7 @@
             </label>
             <div class="layui-input-inline">
                 <input type="text" id="amount" name="amount" required="" lay-verify="amount"
-                       autocomplete="off" class="layui-input">
+                       autocomplete="off" class="layui-input" readonly="readonly">
             </div>
         </div>
 
@@ -113,7 +112,7 @@
             </label>
             <div class="layui-input-inline">
                 <input type="text" id="price" name="price" required="" lay-verify="price"
-                       autocomplete="off" class="layui-input">
+                       autocomplete="off" class="layui-input" readonly="readonly">
             </div>
         </div>
         <div class="layui-form-item">
@@ -125,8 +124,6 @@
                        autocomplete="off" class="layui-input" readonly="readonly">
                 <input type="hidden" name="supplierId" id="supplierId"/>
             </div>
-            <a class="layui-btn" onclick="chooseSupplier()" style="margin-left: 15px"><i
-                    class="layui-icon"></i>选择供应商</a>
         </div>
         <div class="layui-form-item layui-form-text">
             <label for="description" class="layui-form-label">

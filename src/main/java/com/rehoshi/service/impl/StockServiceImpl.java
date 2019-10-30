@@ -102,7 +102,6 @@ public class StockServiceImpl extends ServiceImpl<StockMapper, Stock> implements
 
         assembleStock(stock);
 
-//        int result = stockMapper.addStock(stock);
         boolean success = save(stock);
 
         if (success) {
@@ -145,7 +144,11 @@ public class StockServiceImpl extends ServiceImpl<StockMapper, Stock> implements
      */
     private void assembleStock(Stock stock) {
 
-        stock.setCreatorId(ContextUtil.getCurUser().getId());
+        String userId = ContextUtil.getCurUser().getId();
+        if(stock.getId() == null){
+            stock.setCreatorId(userId);
+        }
+        stock.setUpdaterId(userId);
 
         String id = stock.getgId();
         Goods goods = goodsMapper.queryGoodSByID(id);
@@ -190,7 +193,7 @@ public class StockServiceImpl extends ServiceImpl<StockMapper, Stock> implements
      */
     public RespData<Boolean> editStock(Stock stock) {
         assembleStock(stock);
-        int result = stockMapper.editStock(stock);
+        int result = stockMapper.updateById(stock);
         if (result == 1) {
             return RespData.success(true).setCode(200).setMsg("更新成功");
         } else {

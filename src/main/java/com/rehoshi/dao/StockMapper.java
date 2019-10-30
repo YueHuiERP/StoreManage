@@ -53,14 +53,6 @@ public interface StockMapper extends BaseMapper<Stock> {
     })
     List<Stock> queryStockBySearch(StockPageSearch search);
 
-    @Update({"UPDATE `stock` SET",
-            "name=#{name},gId=#{gId},amount=#{amount},price=#{price},",
-            "provider=#{provider},description=#{description},batch=#{batch},",
-            "offsetAmount=#{offsetAmount}, specsValue=#{specsValue}, supplierId = #{supplierId}",
-            "parentId=#{parentId}",
-            "WHERE id=#{id}"})
-    int editStock(Stock stock);
-
     @Select({
             "SELECT COUNT(*) FROM `stock`",
             "WHERE to_days(createTime) = to_days(now())"
