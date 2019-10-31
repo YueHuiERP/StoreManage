@@ -2,7 +2,6 @@ package com.rehoshi.model;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.rehoshi.util.CollectionUtil;
 import lombok.Data;
 
 /**

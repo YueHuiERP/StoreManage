@@ -147,27 +147,27 @@ public class Product extends BaseModel {
         }
     }
 
-    public ProductComposition getMainMaterial(){
-       return CollectionUtil.first(getCompositions(), ProductComposition::isMain) ;
+    public ProductComposition getMainMaterial() {
+        return CollectionUtil.first(getCompositions(), ProductComposition::isMain);
     }
 
-    public ProductComposition getPackageMaterial(){
-        return CollectionUtil.first(getCompositions(), ProductComposition::isPackage) ;
+    public ProductComposition getPackageMaterial() {
+        return CollectionUtil.first(getCompositions(), ProductComposition::isPackage);
     }
 
-    public Double getMainCost(){
+    public Double getMainCost() {
         return CollectionUtil.aggregate(getCompositions(), (cops, sum) -> {
-            if(cops.isMain()){
+            if (cops.isMain()) {
                 return sum + cops.getCost();
-            }else {
-                return sum ;
+            } else {
+                return sum;
             }
-        }, 0d) ;
+        }, 0d) * getAmount();
     }
 
-    public Double getCost(){
-        return CollectionUtil.aggregate(getCompositions(), (cops, sum) ->{
-           return sum + cops.getCost() ;
-        }, 0d) * getAmount() ;
+    public Double getCost() {
+        return (CollectionUtil.aggregate(getCompositions(),
+                (cops, sum) -> sum + cops.getCost(), 0d)
+                + getPackFee()) * getAmount();
     }
 }

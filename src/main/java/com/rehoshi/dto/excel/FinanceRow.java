@@ -6,8 +6,6 @@ import com.rehoshi.model.ProductComposition;
 import com.rehoshi.model.Stock;
 import lombok.Data;
 
-import java.util.Date;
-
 /**
  * 财务统计的数据传输类
  */
@@ -30,7 +28,7 @@ public class FinanceRow extends ExcelRow<Stock> {
     private Double stockWasteAmount;
     @ExcelProperty(value = "误差", index = 8)
     private Double stockOffsetAmount;
-    @ExcelProperty(value = "成品单价", index = 9)
+    @ExcelProperty(value = "原料折合单价", index = 9)
     private Double productUnitPrice;
 
     @ExcelProperty(value = "生产时间", index = 10)
