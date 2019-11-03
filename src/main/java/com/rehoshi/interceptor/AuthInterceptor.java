@@ -14,6 +14,7 @@ public class AuthInterceptor implements HandlerInterceptor {
 
     //一天
     private static long TIME_OUT = 1000 * 60 * 60 * 24;
+//    private static long TIME_OUT = 1000 * 45;
 
     private String[] ignoreURI = {"/", "/user/login"};
 
