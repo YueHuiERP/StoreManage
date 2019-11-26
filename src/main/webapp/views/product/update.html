@@ -135,9 +135,11 @@
             var errMsg = ''; // 错误信息
             if (field === 'amount') {
                 // 评分的条件
-                if (value == 0 || !isNaturalNum(value)) {
+                if (value == 0 || !isDouble(value)) {
                     errMsg = '请输入小数点后两位';
                 }
+
+                console.log(value) ;
             }
 
             if (errMsg) {

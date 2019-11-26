@@ -24,7 +24,7 @@ public class ProductCopsRow extends ExcelRow<ProductComposition> {
     @ExcelProperty(value = {"批次价格"}, index = 8)
     private Double price ;
     @ExcelProperty(value = {"原料数量"}, index = 9)
-    private Integer copsAmount ;
+    private Double copsAmount ;
 
     public ProductCopsRow(Product product, ProductComposition model) {
         super(model);
@@ -95,11 +95,11 @@ public class ProductCopsRow extends ExcelRow<ProductComposition> {
         this.price = price;
     }
 
-    public Integer getCopsAmount() {
+    public Double getCopsAmount() {
         return copsAmount;
     }
 
-    public void setCopsAmount(Integer copsAmount) {
+    public void setCopsAmount(Double copsAmount) {
         this.copsAmount = copsAmount;
     }
 

@@ -68,7 +68,7 @@
 <!-- 图片 -->
 <script type="text/html" id="toolbar">
     <button class="layui-btn layui-btn-danger" onclick="delAll()"><i class="layui-icon"></i>批量删除</button>
-    <button class="layui-btn" onclick="x_admin_show('添加库存','stock-batch-add.html',800,550)"><i class="layui-icon"></i>添加
+    <button class="layui-btn" onclick="x_admin_show('添加库存','stock-batch-update.html',800,550)"><i class="layui-icon"></i>添加
     </button>
 </script>
 
@@ -171,7 +171,7 @@
             } else if (layEvent === 'stock_edit') { //编辑当前行
                 //将当前行的数据赋给全局变量
                 parToChilData = JSON.stringify(obj.data);
-                x_admin_show("编辑库存", "stock-edit.html", 600, 600);
+                x_admin_show("编辑库存", "stock-batch-update.html?id="+obj.data.id, 600, 600);
 
             }
         });

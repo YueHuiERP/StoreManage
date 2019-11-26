@@ -3,8 +3,10 @@ package com.rehoshi.controller;
 import com.rehoshi.dto.PageData;
 import com.rehoshi.dto.RespData;
 import com.rehoshi.dto.search.StockPageSearch;
+import com.rehoshi.model.Goods;
 import com.rehoshi.model.Stock;
 import com.rehoshi.model.Supplier;
+import com.rehoshi.service.GoodsService;
 import com.rehoshi.service.StockService;
 import com.rehoshi.util.DateUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,9 @@ public class StockController {
 
     @Autowired
     private StockService stockService;
+
+    @Autowired
+    private GoodsService goodsService ;
 
     /**
      * 查询所有库存  返回分页数据
@@ -113,6 +118,23 @@ public class StockController {
     @PostMapping(value = "add/suppliers")
     public RespData<Boolean> addFromSuppliers(@RequestBody Stock stock){
         return stockService.addFromSuppliers(stock);
+    }
+
+    @PostMapping(value = "saveOrUpdate/suppliers")
+    public RespData<Boolean> saveOrUpdateFromSuppliers(@RequestBody Stock stock){
+        return stockService.saveOrUpdateFromSuppliers(stock);
+    }
+
+
+    @GetMapping(value = "get/{id}")
+    public RespData<Stock> get(@PathVariable String id){
+        RespData<Stock> respData = RespData.fail(null);
+        Stock byId = stockService.getById(id);
+        byId.setChildren(stockService.getByParentId(id).data);
+        RespData<Goods> goods = goodsService.getById(byId.getgId());
+        byId.setGoods(goods.data);
+        respData.success().setData(byId).setMsg("请求成功") ;
+        return  respData;
     }
 
 }

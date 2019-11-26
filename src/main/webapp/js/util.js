@@ -1,4 +1,8 @@
 
+function isDouble(val) {
+    return isMoney(val) ;
+}
+
 function isMoney(val) {
     val = val.toString()
     let reg = /^(([1-9]+)|([0-9]+\.[0-9]{1,2}))$/;

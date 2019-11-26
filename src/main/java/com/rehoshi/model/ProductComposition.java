@@ -17,7 +17,7 @@ public class ProductComposition extends BaseModel {
     @TableField(exist = false)
     private Stock stock;
     //原品数量
-    private Integer amount;
+    private Double amount;
     //原品批次
     private String batch;
 
@@ -69,9 +69,9 @@ public class ProductComposition extends BaseModel {
         return sendAmount;
     }
 
-    public Integer getAmount() {
+    public Double getAmount() {
         if(amount == null){
-            amount = 0 ;
+            amount = 0d ;
         }
         return amount;
     }

@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -264,5 +265,45 @@ public class StockServiceImpl extends ServiceImpl<StockMapper, Stock> implements
     public RespData<List<Stock>> getByParentId(String id) {
         List<Stock> byParentId = baseMapper.selectByMap(MapUtil.byPair("parentId", id));
         return RespData.success(byParentId).setMsg("查询成功");
+    }
+
+    @Override
+    public RespData<Boolean> saveOrUpdateFromSuppliers(Stock stock) {
+        RespData<Boolean> respData = RespData.fail(false).setMsg("保存失败");
+        if(StringUtil.isNullOrEmpty(stock.getId())){
+        String batch = getBatch(stock);
+        stock.setBatch(batch);
+        //设置冗余的字段
+        assembleStock(stock);
+        //设置时间用于排序
+        stock.setCreateTime(new Date());
+        }else {
+            //删除之前的附属库存
+            deleteByParentId(stock.getId()) ;
+        }
+        boolean success = saveOrUpdate(stock);
+        if (success) {
+            long timeMillis = System.currentTimeMillis();
+            CollectionUtil.foreach(stock.getChildren(), (data, index) -> {
+                //子商品
+                data.setBatch(stock.getBatch());
+                //设置时间用于排序
+                data.setCreateTime(new Date(timeMillis + (index + 1)));
+                data.setParentId(stock.getId());
+                assembleStock(data);
+            });
+
+            if (saveOrUpdateBatch(stock.getChildren())) {
+                respData.success().setMsg("保存成功");
+            }
+        }
+
+        return respData;
+    }
+
+    public boolean deleteByParentId(String id){
+        UpdateWrapper<Stock> wrapper = new UpdateWrapper<>() ;
+        wrapper.eq("parentId", id) ;
+        return remove(wrapper) ;
     }
 }

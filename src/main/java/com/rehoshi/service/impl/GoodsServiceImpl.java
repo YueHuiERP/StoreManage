@@ -109,7 +109,7 @@ public class GoodsServiceImpl implements GoodsService {
 
     @Override
     public RespData<Goods> getById(String id) {
-        return null;
+        return queryGoodById(id);
     }
 
 

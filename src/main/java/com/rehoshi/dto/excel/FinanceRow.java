@@ -42,7 +42,7 @@ public class FinanceRow extends ExcelRow<Stock> {
     @ExcelProperty(value = "打包费用", index = 14)
     private Double productPkgFee;
     @ExcelProperty(value = "原料数量", index = 15)
-    private Integer materialAmount;
+    private Double materialAmount;
     @ExcelProperty(value = "包材批次", index = 16)
     private String pkgMaterialBatch;
     @ExcelProperty(value = "包材名称", index = 17)

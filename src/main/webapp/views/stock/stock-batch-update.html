@@ -72,7 +72,8 @@
             <div class="layui-input-inline">
                 <input type="text" class="layui-input" id="goodsName" name="name" readonly="readonly"
                        lay-verify="name|required"/>
-                <input type="hidden" class="layui-input" id="goodsId" name="gId" readonly="readonly" lay-verify="gId|required"/>
+                <input type="hidden" class="layui-input" id="goodsId" name="gId" readonly="readonly"
+                       lay-verify="gId|required"/>
             </div>
             <a class="layui-btn" onclick="chooseGoods(-1)" style="margin-left: 15px"><i
                     class="layui-icon"></i>选择库存类型</a>
@@ -221,8 +222,15 @@
             }
         },
         LAY_TABLE_INDEX: function () {
+        },
+        id: function () {
+
         }
     };
+
+    let parentId = null;
+
+    parentId = getQueryString("id")
 
     layui.use(['table'], function () {
         let table = layui.table;
@@ -243,10 +251,14 @@
                 inputElem.blur();
                 obj.update(data);
                 tdElem.click();
-            }else {
-                syncParentStock() ;
+            } else {
+                syncParentStock();
             }
         })
+
+        if (parentId != null) {
+            queryParent(parentId);
+        }
     })
 
     layui.use(["jquery", "upload", "form", "layer", "element"], function () {
@@ -258,7 +270,7 @@
         form.on('submit(add)', function (result) {
             //获取主的库存对象
             let stock = result.field;
-
+            stock.id = parentStock.id;
             if (stockList.length <= 0) {
                 showToast("至少添加一条入库记录");
             } else {
@@ -267,9 +279,9 @@
                 if (err != null) {//提交时判断输入的正确性
                     showShake(err);
                 } else {
-                    stock.children = stockList ;
+                    stock.children = stockList;
                     $.hoshi()
-                        .post("/stock/add/suppliers")
+                        .post("/stock/saveOrUpdate/suppliers")
                         .jsonParam(stock)
                         .onSuccess(function (data, msg, code) {
                             showToast(msg, parent.layui);
@@ -312,6 +324,18 @@
         })
     });
 
+    function queryParent(id) {
+        $.hoshi()
+            .get("/stock/get/" + parentId)
+            .onSuccess(stock => {
+                parentStock = stock;
+                stockList = stock.children;
+                $("#goodsName").val(stock.goods.name);
+                $("#goodsId").val(stock.gId);
+                reloadStockTable();
+            }).linkStart();
+    }
+
     function reloadStockTable() {
         let container;            //layui table 父div
         let tbBody = null;  //当前的layui table
@@ -334,7 +358,7 @@
             tbBody[0].scrollTop = top;
             tbBody[0].scrollLeft = left;
         }
-        syncParentStock() ;
+        syncParentStock();
     }
 
     /**
@@ -343,22 +367,21 @@
     function syncParentStock() {
         let totalAmount = 0;
         let totalPrice = 0.0;
-        let size ;
+        let size;
 
         if (stockList != null) {
             stockList.forEach(stock => {
-                totalAmount += stock.amount == null ? 0 : parseInt(stock.amount) ;
-                totalPrice += stock.price == null ? 0 : parseFloat(stock.price) ;
+                totalAmount += stock.amount == null ? 0 : parseInt(stock.amount);
+                totalPrice += stock.price == null ? 0 : parseFloat(stock.price);
             });
-            size = stockList.length ;
+            size = stockList.length;
         }
 
-        if(size < 1){
-            size = 1 ;
+        if (size < 1) {
+            size = 1;
         }
-
-        $("#amount").val(totalAmount) ;
-        $("#price").val(totalPrice / size) ;
+        $("#amount").val(totalAmount);
+        $("#price").val(totalPrice / size);
     }
 
     function deleteStock(tableIndex) {
@@ -385,10 +408,12 @@
         let pros = Object.keys(stock);
         for (let i = 0; i < pros.length; i++) {
             let pro = pros[i];
-            console.log(pro);
-            errorMsg = verify[pro](stock[pro]);
-            if (errorMsg) {
-                break;
+            let func = verify[pro];
+            if (func != null) {
+                errorMsg = func(stock[pro]);
+                if (errorMsg) {
+                    break;
+                }
             }
         }
         return errorMsg;

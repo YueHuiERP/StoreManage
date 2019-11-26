@@ -23,7 +23,7 @@ public class PrepareOrderRow extends ExcelRow<Order> {
     private String goodsName;
 
     @ExcelProperty(value = {"商品数量"}, index = 5)
-    private Integer goodsAmount;
+    private Double goodsAmount;
 
     @ExcelProperty(value = {"发货数量"}, index = 6)
     private Double sendAmount;
@@ -70,11 +70,11 @@ public class PrepareOrderRow extends ExcelRow<Order> {
         this.goodsName = goodsName;
     }
 
-    public Integer getGoodsAmount() {
+    public Double getGoodsAmount() {
         return goodsAmount;
     }
 
-    public void setGoodsAmount(Integer goodsAmount) {
+    public void setGoodsAmount(Double goodsAmount) {
         this.goodsAmount = goodsAmount;
     }
 
