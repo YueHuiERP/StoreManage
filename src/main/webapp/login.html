@@ -15,6 +15,7 @@
     <script type="text/javascript" src="./js/xadmin.js"></script>
     <script type="text/javascript" src="./js/cookie.js"></script>
     <script type="text/javascript" src="./js/ajaxQuery.js"></script>
+    <script type="text/javascript" src="./js/user.js"></script>
 
 </head>
 <body class="login-bg">
@@ -46,6 +47,8 @@
                     .formParam(data.field)
                     .onSuccess(function (resp, msg) {
                         if (resp) {
+                            //保存当前用户
+                            saveCurUser(resp);
                             window.location.href = "index.html";
                         } else {
                             showError(msg);

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html class="x-admin-sm">
+
+<head>
+    <meta charset="UTF-8">
+    <title><span class="entity_name"></span>添加</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport"
+          content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi"/>
+    <link rel="stylesheet" href="../../css/font.css">
+    <link rel="stylesheet" href="../../css/xadmin.css">
+    <script type="text/javascript" src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <script type="text/javascript" src="../../lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="../../js/xadmin.js"></script>
+    <script type="text/javascript" src="../../js/cookie.js"></script>
+    <script type="text/javascript" src="../../js/ajaxQuery.js"></script>
+    <script type="text/javascript" src="../../js/layui-table-select.js"></script>
+    <script type="text/javascript" src="../../js/util.js"></script>
+    <!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+    <!--[if lt IE 9]>
+    <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+    <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+<div class="x-body">
+    <form class="layui-form">
+
+        <div class="layui-form-item">
+            <label class="layui-form-label"> <span class="x-red">*</span>打包商品</label>
+            <div class="layui-input-inline">
+                <input type="text" class="layui-input" id="goodName"  readonly="readonly" >
+            </div>
+            <a class="layui-btn" onclick="addStocks()" style="margin-left: 15px"><i class="layui-icon"></i>选择商品</a>
+        </div>
+        <!-- 隐藏域 保存商品id 随表单一起提交 -->
+        <div class="layui-form-item">
+            <div class="layui-input-inline">
+                <!-- <a class="layui-btn" onclick="addStocks()" style="margin-left: 30px"><i class="layui-icon"></i>选择库存类型</a>-->
+                <input type="hidden" class="layui-input" id="gId" name="gId"  value=""  lay-verify="gId">
+
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label for="description" class="layui-form-label">
+                <span class="x-red">*</span>描述
+            </label>
+            <div class="layui-input-inline">
+                <input type="text" id="description" name="description" required="" lay-verify="required"
+                       autocomplete="off" class="layui-input">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">
+            </label>
+            <button class="layui-btn" lay-filter="add" lay-submit="">
+                保存
+            </button>
+        </div>
+        <input type="hidden" name="createTime" id="createTime"/>
+    </form>
+</div>
+<script type="text/html" id="operateTpl">
+    <a class='x-red' href='#' onclick="delStock('{{ d.id }}')">删除</a>
+</script>
+
+<script type="text/html" id="specsTpl">
+    {{d.goods.specs + d.goods.specsUnit}}
+</script>
+<script>
+
+    let entityName = "pack" ;
+    let entityShowName = "打包" ;
+
+    var cache = {
+        entityId:null,
+        entity:null,
+    };
+
+    layui.use(['form'], function () {
+        $ = layui.jquery;
+        var form = layui.form;
+
+
+        //监听提交
+        form.on('submit(add)', function (data) {
+            var hoshi = $.hoshi();
+            if (cache.entityId != null) {
+                cache.entity.id = cache.entityId ;
+                cache.entity.name = data.field.name ;
+                cache.entity.description = data.field.description ;
+                hoshi.put("/"+entityName+"/update");
+            } else {
+                cache.supplier = data.field ;
+                hoshi.post("/"+entityName+"/add");
+            }
+            hoshi.jsonParam(cache.entity)
+                .onSuccess(function (data, msg) {
+                    parent.layui.layer.msg(msg);
+                    reloadTable(parent);
+                }).linkStart();
+            return false;
+        });
+
+        cache.entityId = getQueryString("id") ;
+        queryEntity() ;
+    });
+
+
+    function queryEntity() {
+        if (cache.entityId != null) {
+            $.hoshi()
+                .get("/"+entityName+"/get/" + cache.entityId)
+                .onSuccess(setEntity).linkStart();
+        }
+        $(".entity_name").html(entityShowName);
+    }
+
+    function setEntity(entity) {
+        cache.entity = entity ;
+        $("#name").val(entity.name);
+        $("#description").val(entity.description);
+    }
+    
+    function addGood() {
+        
+    }
+</script>
+
+</body>
+
+</html>

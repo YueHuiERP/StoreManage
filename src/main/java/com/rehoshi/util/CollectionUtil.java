@@ -1,9 +1,5 @@
 package com.rehoshi.util;
 
-import com.rehoshi.model.Product;
-import com.rehoshi.model.ProductComposition;
-import com.rehoshi.model.Stock;
-import org.apache.poi.ss.formula.functions.T;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -11,6 +7,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+@Deprecated
 public class CollectionUtil {
 
     public interface Foreach<T> {
@@ -114,7 +111,7 @@ public class CollectionUtil {
         return sb.toString();
     }
 
-    public static String concatString(T[] array, Function<T, String> mapper, String separator) {
+    public static <T> String concatString(T[] array, Function<T, String> mapper, String separator) {
         return concatString(Arrays.asList(array), mapper, separator);
     }
 

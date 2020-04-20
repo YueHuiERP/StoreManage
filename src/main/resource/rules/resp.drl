@@ -1,0 +1,16 @@
+package rules;
+dialect  "mvel"
+import  com.rehoshi.dto.RespData
+rule "success"
+    no-loop true
+    when $resp : RespData(code == 200 && msg == null)
+    then $resp.setMsg("操作成功");
+end
+
+
+rule "server_error"
+    no-loop true
+    when $resp : RespData(code == 0 && msg == null)
+    then $resp.setMsg("服务器错误");
+end
+
